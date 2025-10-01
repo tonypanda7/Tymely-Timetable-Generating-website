@@ -33,7 +33,9 @@ const AdminUploadPage = ({
   // Actions
   saveSettings,
   generateTimetable,
-  isGenerating
+  isGenerating,
+  deleteAllUploadedData,
+  isPurging
 }) => {
   const [dragActive, setDragActive] = useState({});
 
@@ -784,12 +786,15 @@ AdminUploadPage.propTypes = {
   // Actions
   saveSettings: PropTypes.func.isRequired,
   generateTimetable: PropTypes.func.isRequired,
-  isGenerating: PropTypes.bool
+  isGenerating: PropTypes.bool,
+  deleteAllUploadedData: PropTypes.func.isRequired,
+  isPurging: PropTypes.bool
 };
 
 AdminUploadPage.defaultProps = {
   isUploading: false,
-  isGenerating: false
+  isGenerating: false,
+  isPurging: false
 };
 
 export default AdminUploadPage;
