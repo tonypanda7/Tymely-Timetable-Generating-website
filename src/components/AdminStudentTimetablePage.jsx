@@ -182,7 +182,7 @@ const AdminStudentTimetablePage = ({
                                       return (
                                         <td key={dayIdx} className="table-cell">
                                           <div className="free-slot">
-                                            <span className="free-text">Break</span>
+                                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Break</span>
                                           </div>
                                         </td>
                                       );

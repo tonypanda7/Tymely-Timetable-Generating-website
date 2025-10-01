@@ -105,7 +105,7 @@ const StudentTimetable = ({
 
     const subj = String(slot.subjectName || '');
     if (slot.status === 'break' || /break|lunch/i.test(subj)) {
-      return { subjectName: /lunch/i.test(subj) ? 'Lunch' : 'Break', className: '', status: 'break', bgColor: '#F5F5F5', textColor: '#717182' };
+      return { subjectName: /lunch/i.test(subj) ? 'Lunch' : 'Break', className: '', status: 'break', bgColor: '#3B82F6', textColor: '#FFFFFF' };
     }
 
     if (slot.status === 'free' || subj === 'Free') {

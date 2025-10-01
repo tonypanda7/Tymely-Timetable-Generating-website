@@ -25,6 +25,16 @@ const CourseManagementPage = ({
   const [semester, setSemester] = useState(1);
   const [assignedTeachers, setAssignedTeachers] = useState([]);
 
+  // Local input buffers to prevent focus loss while typing
+  const [localSubjectName, setLocalSubjectName] = useState('');
+  const [localCredits, setLocalCredits] = useState(credits);
+  const [localSemester, setLocalSemester] = useState(semester);
+
+  // Sync main -> local when main state changes (e.g., reset after submit)
+  useEffect(() => { setLocalSubjectName(subjectName || ''); }, [subjectName]);
+  useEffect(() => { setLocalCredits(Number(credits) || 0); }, [credits]);
+  useEffect(() => { setLocalSemester(Number(semester) || 1); }, [semester]);
+
   useEffect(() => {
     // Transform classes data into course sections
     const courseData = classes.map(cls => ({
@@ -106,6 +116,10 @@ const CourseManagementPage = ({
       setCourseStyle('hard_theory');
       setSemester(1);
       setAssignedTeachers([]);
+      // Reset local buffers as well
+      setLocalSubjectName('');
+      setLocalCredits(3);
+      setLocalSemester(1);
       setShowAddCourseModal(false);
     }
   };
@@ -151,8 +165,9 @@ const CourseManagementPage = ({
               type="text"
               className="form-input"
               placeholder="e.g., Data Structures"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
+              value={localSubjectName}
+              onChange={(e) => setLocalSubjectName(e.target.value)}
+              onBlur={() => setSubjectName(localSubjectName)}
             />
           </div>
 
@@ -161,8 +176,9 @@ const CourseManagementPage = ({
             <input
               type="number"
               className="form-input"
-              value={credits}
-              onChange={(e) => setCredits(Number(e.target.value))}
+              value={localCredits}
+              onChange={(e) => setLocalCredits(e.target.value === '' ? '' : Number(e.target.value))}
+              onBlur={() => setCredits(Number(localCredits) || 0)}
               min="1"
             />
           </div>
@@ -197,8 +213,9 @@ const CourseManagementPage = ({
             <input
               type="number"
               className="form-input"
-              value={semester}
-              onChange={(e) => setSemester(Number(e.target.value))}
+              value={localSemester}
+              onChange={(e) => setLocalSemester(e.target.value === '' ? '' : Number(e.target.value))}
+              onBlur={() => setSemester(Number(localSemester) || 1)}
               min="1"
               max="8"
             />

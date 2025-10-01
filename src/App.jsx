@@ -415,6 +415,19 @@ export default function App() {
         });
       }
 
+      // Also mark computed lunch slots (from calculateTimeSlots) as non-assignable Lunch
+      try {
+        const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+        const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+        for (let d = 0; d < days; d++) {
+          lunchIndices.forEach((li) => {
+            if (li >= 0 && li < hours) base[d][li] = { subjectName: 'Lunch', className: '', status: 'break', teacherId: '' };
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+
       // Fill assigned slots
       Object.keys(generatedTimetables).forEach((className) => {
         const table = generatedTimetables[className];
@@ -422,6 +435,9 @@ export default function App() {
         table.forEach((daySlots, dayIdx) => {
           daySlots.forEach((slot, periodIdx) => {
             if (periodIdx < hours && dayIdx < days) {
+              // Skip assigning to break/lunch slots
+              if (base[dayIdx] && base[dayIdx][periodIdx] && base[dayIdx][periodIdx].status === 'break') return;
+
               if (slot && slot.teacherId === teacherId) {
                 const displayName = resolveElectiveSubjectForTeacher({ classesList: classes, className, originalName: slot.subjectName, status: slot.status, teacherId });
                 base[dayIdx][periodIdx] = {
@@ -1123,6 +1139,44 @@ export default function App() {
 
   const saveSettings = async () => {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
+
+    // Validate lunch window and ensure breakSlots do not include lunch index
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+
+      // If lunch indices present, validate their times fall within 12:00 - 13:40 window
+      for (const li of lunchIndices) {
+        const label = headerSlots[li] || '';
+        const m = String(label).match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+        if (m) {
+          const toMin = (s) => { const [h, mm] = s.split(':').map(Number); return h * 60 + mm; };
+          const start = toMin(m[1]);
+          const end = toMin(m[2]);
+          const earliest = 12 * 60; // 12:00
+          const latestEnd = 13 * 60 + 40; // 13:40
+          if (start < earliest || end > latestEnd) {
+            showMessage(`Computed lunch slot (${label}) must be between 12:00 and 13:40. Adjust class times or duration.`, 'error');
+            return;
+          }
+        } else {
+          showMessage('Unable to parse computed lunch slot label. Check timetable slot configuration.', 'error');
+          return;
+        }
+      }
+
+      // Ensure breakSlots does not include lunch indices
+      const breaks = Array.isArray(breakSlots) ? breakSlots.slice() : [];
+      const intersection = breaks.filter(b => lunchIndices.includes(b));
+      if (intersection.length > 0) {
+        showMessage(`Break Slots must not include lunch index(es): ${intersection.join(', ')}. Remove them from Break Slots.`, 'error');
+        return;
+      }
+    } catch (err) {
+      // ignore validation errors above and proceed to saving; but log
+      console.warn('Validation error computing lunch/break slots', err);
+    }
+
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
       await setDoc(settingsRef, {
@@ -1173,12 +1227,22 @@ export default function App() {
       }
     }
 
+    // Ensure lunch periods are treated as break slots for generation
+    let computedBreakSlots = Array.isArray(breakSlots) ? breakSlots.slice() : [];
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+      computedBreakSlots = Array.from(new Set([...(computedBreakSlots || []), ...lunchIndices]));
+    } catch (e) {
+      // ignore
+    }
+
     const { timetables: newTimetables, teacherHoursLeft } = acGenerateTimetables({
       classes,
       teachers,
       workingDays,
       hoursPerDay,
-      breakSlots: breakSlots || [],
+      breakSlots: computedBreakSlots || [],
       electivePeriodIndices: electiveSlots || [],
       programs,
       courses,
@@ -1225,11 +1289,25 @@ export default function App() {
       });
     }
 
+    // Also mark lunch slots in this base so lunch cannot be assigned
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+      for (let d = 0; d < days; d++) {
+        lunchIndices.forEach((li) => {
+          if (li >= 0 && li < hours) base[d][li] = { subjectName: 'Lunch', className: '', status: 'break', teacherId: '' };
+        });
+      }
+    } catch (e) {}
+
     Object.keys(generatedTimetables).forEach((className) => {
       const table = generatedTimetables[className];
       if (!Array.isArray(table)) return;
       table.forEach((daySlots, dayIdx) => {
         daySlots.forEach((slot, periodIdx) => {
+          // Skip if the target slot is already a break/lunch marker
+          if (base[dayIdx] && base[dayIdx][periodIdx] && base[dayIdx][periodIdx].status === 'break') return;
+
           if (slot && slot.teacherId === teacherId) {
             const displayName = resolveElectiveSubjectForTeacher({ classesList: classes, className, originalName: slot.subjectName, status: slot.status, teacherId });
             base[dayIdx][periodIdx] = {
@@ -1367,6 +1445,9 @@ export default function App() {
 
     return slots;
   };
+
+  // Memoize computed time slots to avoid producing a new array on every render
+  const cachedTimeSlots = useMemo(() => calculateTimeSlots(), [timetableSettings, hoursPerDay, classStartTime, classDuration, breakSlots, dayStartTime]);
 
   const approveCancellation = async (c) => {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
@@ -1939,6 +2020,8 @@ export default function App() {
           <main className="main-content">
             <AdminUploadPage
               // Upload handlers
+              timeSlots={cachedTimeSlots}
+
               handleTeacherCSV={handleTeacherCSV}
               handleStudentCSV={handleStudentCSV}
               handleClassroomsCSV={handleClassroomsCSV}
@@ -2051,7 +2134,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           classes={classes}
           courses={courses}
           programs={programs}
@@ -2068,7 +2151,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           breakSlots={breakSlots}
           teachers={teachers}
         />
@@ -2583,8 +2666,8 @@ export default function App() {
                 <input type="number" value={workingDays} onChange={e => setWorkingDays(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <label className="text-sm font-medium">Hours Per Day:</label>
-                <input type="number" value={hoursPerDay} onChange={e => setHoursPerDay(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="text-sm font-medium">Classes Per Day:</label>
+                <input type="number" value={Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0))} onChange={e => setHoursPerDay(Number(e.target.value) + (Array.isArray(breakSlots) ? breakSlots.length : 0))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <label className="text-sm font-medium">Break Slots (comma-separated, 0-based):</label>
@@ -2682,7 +2765,7 @@ export default function App() {
                                 if (i === lunchAfter - 1) {
                                   cells.push(
                                     <td key={`lunch-${dayIdx}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                                     </td>
                                   );
                                 }
@@ -2755,7 +2838,7 @@ export default function App() {
                                 if (i === lunchAfter - 1) {
                                   cells.push(
                                     <td key={`tlunch-${dayIdx}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                                     </td>
                                   );
                                 }
@@ -2785,7 +2868,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           handleSlotToggle={handleSlotToggle}
           downloadTimetable={downloadTimetable}
           studentClass={studentClass}

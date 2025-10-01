@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 const AdminUploadPage = ({
@@ -29,6 +29,8 @@ const AdminUploadPage = ({
   setClassDuration,
   freePeriodPercentage,
   setFreePeriodPercentage,
+  // computed time slots from parent (may include LUNCH marker)
+  timeSlots = [] ,
   
   // Actions
   saveSettings,
@@ -111,20 +113,25 @@ const AdminUploadPage = ({
     </div>
   );
 
-  const TimeInput = ({ value, onChange, label, id }) => (
-    <div className="time-input-container">
-      <label htmlFor={id} className="time-label">{label}</label>
-      <div className="time-picker">
-        <input
-          id={id}
-          type="time"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="time-input"
-        />
+  const TimeInput = ({ value, onChange, label, id }) => {
+    const [local, setLocal] = useState(value || '');
+    useEffect(() => { setLocal(value || ''); }, [value]);
+    return (
+      <div className="time-input-container">
+        <label htmlFor={id} className="time-label">{label}</label>
+        <div className="time-picker">
+          <input
+            id={id}
+            type="time"
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onChange(local)}
+            className="time-input"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const DropdownInput = ({ value, onChange, options, label, id }) => (
     <div className="dropdown-container">
@@ -152,21 +159,26 @@ const AdminUploadPage = ({
     </div>
   );
 
-  const TextInput = ({ value, onChange, label, id, placeholder, type = "text" }) => (
-    <div className="text-input-container">
-      <label htmlFor={id} className="text-label">{label}</label>
-      <div className="text-input-wrapper">
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={(e) => onChange(type === "number" ? Number(e.target.value) : e.target.value)}
-          placeholder={placeholder}
-          className="text-input"
-        />
+  const TextInput = ({ value, onChange, label, id, placeholder, type = "text" }) => {
+    const [local, setLocal] = useState(type === 'number' ? (Number(value) || '') : (value == null ? '' : String(value)));
+    useEffect(() => { setLocal(type === 'number' ? (Number(value) || '') : (value == null ? '' : String(value))); }, [value, type]);
+    return (
+      <div className="text-input-container">
+        <label htmlFor={id} className="text-label">{label}</label>
+        <div className="text-input-wrapper">
+          <input
+            id={id}
+            type={type}
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onChange(type === 'number' ? Number(local) : local)}
+            placeholder={placeholder}
+            className="text-input"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="admin-upload-page">
@@ -234,21 +246,21 @@ const AdminUploadPage = ({
             />
             
             <DropdownInput
-              label="Hours Per Day:"
+              label="Classes Per Day:"
               id="hours-per-day"
-              value={hoursPerDay}
-              onChange={setHoursPerDay}
+              value={(() => { const lunchCount = Array.isArray(timeSlots) ? timeSlots.filter(s => /\(LUNCH\)/i.test(String(s || ''))).length : 0; return Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0) - lunchCount); })()}
+              onChange={(v) => { const lunchCount = Array.isArray(timeSlots) ? timeSlots.filter(s => /\(LUNCH\)/i.test(String(s || ''))).length : 0; setHoursPerDay(Number(v) + (Array.isArray(breakSlots) ? breakSlots.length : 0) + lunchCount); }}
               options={[
-                { value: 1, label: '1 Hour' },
-                { value: 2, label: '2 Hours' },
-                { value: 3, label: '3 Hours' },
-                { value: 4, label: '4 Hours' },
-                { value: 5, label: '5 Hours' },
-                { value: 6, label: '6 Hours' },
-                { value: 7, label: '7 Hours' },
-                { value: 8, label: '8 Hours' },
-                { value: 9, label: '9 Hours' },
-                { value: 10, label: '10 Hours' }
+                { value: 1, label: '1 Class' },
+                { value: 2, label: '2 Classes' },
+                { value: 3, label: '3 Classes' },
+                { value: 4, label: '4 Classes' },
+                { value: 5, label: '5 Classes' },
+                { value: 6, label: '6 Classes' },
+                { value: 7, label: '7 Classes' },
+                { value: 8, label: '8 Classes' },
+                { value: 9, label: '9 Classes' },
+                { value: 10, label: '10 Classes' }
               ]}
             />
             
