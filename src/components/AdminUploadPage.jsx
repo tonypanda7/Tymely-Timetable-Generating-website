@@ -113,20 +113,25 @@ const AdminUploadPage = ({
     </div>
   );
 
-  const TimeInput = ({ value, onChange, label, id }) => (
-    <div className="time-input-container">
-      <label htmlFor={id} className="time-label">{label}</label>
-      <div className="time-picker">
-        <input
-          id={id}
-          type="time"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="time-input"
-        />
+  const TimeInput = ({ value, onChange, label, id }) => {
+    const [local, setLocal] = useState(value || '');
+    useEffect(() => { setLocal(value || ''); }, [value]);
+    return (
+      <div className="time-input-container">
+        <label htmlFor={id} className="time-label">{label}</label>
+        <div className="time-picker">
+          <input
+            id={id}
+            type="time"
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onChange(local)}
+            className="time-input"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const DropdownInput = ({ value, onChange, options, label, id }) => (
     <div className="dropdown-container">
@@ -154,21 +159,26 @@ const AdminUploadPage = ({
     </div>
   );
 
-  const TextInput = ({ value, onChange, label, id, placeholder, type = "text" }) => (
-    <div className="text-input-container">
-      <label htmlFor={id} className="text-label">{label}</label>
-      <div className="text-input-wrapper">
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={(e) => onChange(type === "number" ? Number(e.target.value) : e.target.value)}
-          placeholder={placeholder}
-          className="text-input"
-        />
+  const TextInput = ({ value, onChange, label, id, placeholder, type = "text" }) => {
+    const [local, setLocal] = useState(type === 'number' ? (Number(value) || '') : (value == null ? '' : String(value)));
+    useEffect(() => { setLocal(type === 'number' ? (Number(value) || '') : (value == null ? '' : String(value))); }, [value, type]);
+    return (
+      <div className="text-input-container">
+        <label htmlFor={id} className="text-label">{label}</label>
+        <div className="text-input-wrapper">
+          <input
+            id={id}
+            type={type}
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            onBlur={() => onChange(type === 'number' ? Number(local) : local)}
+            placeholder={placeholder}
+            className="text-input"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="admin-upload-page">
