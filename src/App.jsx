@@ -1939,6 +1939,8 @@ export default function App() {
               saveSettings={saveSettings}
               generateTimetable={generateTimetable}
               isGenerating={isGeneratingRef.current}
+              deleteAllUploadedData={deleteAllUploadedData}
+              isPurging={isPurging}
             />
           </main>
           <style>{`
