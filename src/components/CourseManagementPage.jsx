@@ -116,6 +116,10 @@ const CourseManagementPage = ({
       setCourseStyle('hard_theory');
       setSemester(1);
       setAssignedTeachers([]);
+      // Reset local buffers as well
+      setLocalSubjectName('');
+      setLocalCredits(3);
+      setLocalSemester(1);
       setShowAddCourseModal(false);
     }
   };
