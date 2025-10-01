@@ -759,6 +759,10 @@ const AdminUploadPage = ({
             grid-template-columns: 1fr;
             gap: 1.5rem;
           }
+
+          .data-purge-section {
+            padding: 1.5rem;
+          }
         }
 
         @media (max-width: 768px) {
