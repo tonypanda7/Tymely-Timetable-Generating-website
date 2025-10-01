@@ -234,7 +234,7 @@ const AdminUploadPage = ({
             />
             
             <DropdownInput
-              label="Hours Per Day:"
+              label="Classes Per Day:"
               id="hours-per-day"
               value={hoursPerDay}
               onChange={setHoursPerDay}
