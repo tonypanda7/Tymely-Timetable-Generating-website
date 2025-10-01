@@ -274,7 +274,11 @@ export default function App() {
 
       const classesCol = collection(db, "artifacts", appId, "public", "data", "classes");
       const unsubscribeClasses = onSnapshot(classesCol, (snapshot) => {
-        const classList = snapshot.docs.map((d) => d.data());
+        const classList = snapshot.docs.map((d) => {
+          const data = d.data() || {};
+          const name = data.name || d.id;
+          return { id: d.id, name, ...data };
+        });
         setClasses(classList);
       }, onErr('classes'));
 
@@ -627,6 +631,13 @@ export default function App() {
 
         const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
         const sanitizeId = (s) => String(s).replace(/\//g, '_').replace(/\s+/g, '-');
+        const existingClassIndex = classes.reduce((acc, cls) => {
+          if (!cls) return acc;
+          const nameKey = cls.name || cls.id;
+          if (nameKey) acc[nameKey] = cls;
+          if (cls.id) acc[cls.id] = cls;
+          return acc;
+        }, {});
         const classesMap = {};
 
         const studentsPublicRef = collection(db, "artifacts", appId, "public", "data", "students");
@@ -641,9 +652,23 @@ export default function App() {
           const semester = Number(get(row, ['Semester', 'Sem'])) || 1;
           const section = get(row, ['Section', 'ClassSection']) ? String(get(row, ['Section', 'ClassSection'])) : 'A';
           const classKey = `${program || 'Program'}-SEM${semester}-${section}`;
+          const classId = sanitizeId(classKey);
+
+          if (!classKey || !studentId) {
+            throw new Error(`Missing class or student identifier in row: ${JSON.stringify(row)}`);
+          }
 
           if (!classesMap[classKey]) {
-            classesMap[classKey] = { name: classKey, program, semester, section, subjects: [], students: [] };
+            const existing = existingClassIndex[classKey] || existingClassIndex[classId] || {};
+            classesMap[classKey] = {
+              id: existing.id || classId,
+              name: classKey,
+              program,
+              semester,
+              section,
+              subjects: Array.isArray(existing.subjects) ? existing.subjects : [],
+              students: Array.isArray(existing.students) ? [...existing.students] : [],
+            };
           }
           classesMap[classKey].students.push(studentId);
 
@@ -666,7 +691,9 @@ export default function App() {
 
         // Upload classes
         Object.keys(classesMap).forEach((clsName) => {
-          uploads.push(setDoc(doc(classPublicRef, sanitizeId(clsName)), classesMap[clsName], { merge: true }));
+          const cls = classesMap[clsName];
+          cls.students = Array.from(new Set(cls.students));
+          uploads.push(setDoc(doc(classPublicRef, cls.id), cls, { merge: true }));
         });
 
         // Remove classes not present in current dataset
@@ -690,6 +717,7 @@ export default function App() {
         });
 
         await Promise.all(uploads);
+        setClasses(Object.values(classesMap));
 
         // Auto-populate subjects for all classes using existing Courses dataset
         try {
@@ -741,56 +769,59 @@ export default function App() {
     };
 
     const updates = [];
+    const updatedClasses = [];
     for (const clsDoc of classesSnap.docs) {
-      const cls = clsDoc.data();
-      const program = String(cls.program || '');
-      const sem = Number(cls.semester || cls.sem || 1);
+      const clsData = clsDoc.data() || {};
+      const classId = clsDoc.id;
+      const className = clsData.name || classId;
+      const program = String(clsData.program || '');
+      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
 
       const relevant = coursesList.filter(c => String(c.program || '') === program && Number(c.semester || 0) === sem);
-    // Separate elective courses and normal courses. Electives will be grouped into an elective group
-    const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
-    const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
+      const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
+      const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
 
-    const subjects = normalList.map(c => ({
-      name: c.name,
-      credits: Number(c.credits || 0),
-      teachers: pickTeachersForCourse(c.name),
-      courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
-      isLab: !!c.isLab,
-      delivery: c.isLab ? 'lab' : 'theory',
-      style: c.style || 'hard_theory',
-      sem: Number(c.semester || 1),
-    }));
-
-    // If there are electives for this program+sem, create an elective group so students choose from them
-    if (electivesList.length > 0) {
-      const details = electivesList.map(e => ({
-        name: e.name,
-        isLab: !!e.isLab,
-        style: e.style || 'hard_theory',
-        teachers: pickTeachersForCourse(e.name),
-        credits: Number(e.credits || 0),
+      const subjects = normalList.map(c => ({
+        name: c.name,
+        credits: Number(c.credits || 0),
+        teachers: pickTeachersForCourse(c.name),
+        courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
+        isLab: !!c.isLab,
+        delivery: c.isLab ? 'lab' : 'theory',
+        style: c.style || 'hard_theory',
+        sem: Number(c.semester || 1),
       }));
 
-      const group = {
-        name: `${program} Electives (Sem ${sem})`,
-        credits: details.reduce((s, d) => s + Number(d.credits || 0), 0),
-        teachers: [],
-        courseType: 'elective',
-        isLab: false,
-        delivery: 'theory',
-        style: 'group',
-        sem: sem,
-        electiveOptionsDetailed: details,
-        electiveChooseCount: 1,
-      };
-      subjects.push(group);
-    }
+      if (electivesList.length > 0) {
+        const details = electivesList.map(e => ({
+          name: e.name,
+          isLab: !!e.isLab,
+          style: e.style || 'hard_theory',
+          teachers: pickTeachersForCourse(e.name),
+          credits: Number(e.credits || 0),
+        }));
 
-      updates.push(setDoc(doc(classesRef, sanitizeId(cls.name)), { subjects }, { merge: true }));
+        const group = {
+          name: `${program} Electives (Sem ${sem})`,
+          credits: details.reduce((s, d) => s + Number(d.credits || 0), 0),
+          teachers: [],
+          courseType: 'elective',
+          isLab: false,
+          delivery: 'theory',
+          style: 'group',
+          sem,
+          electiveOptionsDetailed: details,
+          electiveChooseCount: 1,
+        };
+        subjects.push(group);
+      }
+
+      updates.push(setDoc(doc(classesRef, classId), { subjects }, { merge: true }));
+      updatedClasses.push({ ...clsData, id: classId, name: className, subjects });
     }
 
     await Promise.all(updates);
+    if (updatedClasses.length > 0) setClasses(updatedClasses);
   };
 
   const handleSubjectAdd = async () => {
@@ -1939,6 +1970,8 @@ export default function App() {
               saveSettings={saveSettings}
               generateTimetable={generateTimetable}
               isGenerating={isGeneratingRef.current}
+              deleteAllUploadedData={deleteAllUploadedData}
+              isPurging={isPurging}
             />
           </main>
           <style>{`

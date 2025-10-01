@@ -33,7 +33,9 @@ const AdminUploadPage = ({
   // Actions
   saveSettings,
   generateTimetable,
-  isGenerating
+  isGenerating,
+  deleteAllUploadedData,
+  isPurging
 }) => {
   const [dragActive, setDragActive] = useState({});
 
@@ -321,7 +323,7 @@ const AdminUploadPage = ({
         >
           Save Settings
         </button>
-        
+
         <button
           onClick={generateTimetable}
           disabled={isUploading || isGenerating}
@@ -330,6 +332,23 @@ const AdminUploadPage = ({
           {isGenerating ? 'Generating...' : 'Generate Timetable'}
         </button>
       </div>
+
+      <section className="data-purge-section">
+        <h2 className="purge-title">Danger Zone</h2>
+        <p className="purge-description">
+          Deleting all uploaded data removes every dataset, generated timetable, and stored CSV upload from the system.
+        </p>
+        <button
+          onClick={deleteAllUploadedData}
+          disabled={isUploading || isPurging}
+          className="purge-button"
+        >
+          {isPurging ? 'Deleting All Data...' : 'Delete All Uploaded Data'}
+        </button>
+        {isPurging && (
+          <p className="purge-status">Deleting data, please wait. Do not close this tab.</p>
+        )}
+      </section>
 
       <style>{`
         .admin-upload-page {
@@ -653,6 +672,69 @@ const AdminUploadPage = ({
           transform: none;
         }
 
+        .data-purge-section {
+          margin-top: 3rem;
+          padding: 2rem;
+          border-radius: 0.75rem;
+          background: #fef2f2;
+          box-shadow: 0 4px 40px 0 rgba(220, 38, 38, 0.15);
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .purge-title {
+          font-family: 'Roboto Condensed', sans-serif;
+          font-size: 2rem;
+          font-weight: 700;
+          color: #991b1b;
+          margin: 0;
+        }
+
+        .purge-description {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          color: #7f1d1d;
+          margin: 0;
+          line-height: 1.6;
+        }
+
+        .purge-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 246px;
+          height: 48px;
+          padding: 0.625rem 1.5rem;
+          border-radius: 0.5rem;
+          background: #dc2626;
+          border: none;
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .purge-button:hover:not(:disabled) {
+          background: #b91c1c;
+          transform: translateY(-1px);
+        }
+
+        .purge-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .purge-status {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          color: #dc2626;
+          margin: 0;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
           .admin-upload-page {
@@ -676,6 +758,10 @@ const AdminUploadPage = ({
           .settings-row {
             grid-template-columns: 1fr;
             gap: 1.5rem;
+          }
+
+          .data-purge-section {
+            padding: 1.5rem;
           }
         }
 
@@ -704,12 +790,17 @@ const AdminUploadPage = ({
           }
 
           .save-button,
-          .generate-button {
+          .generate-button,
+          .purge-button {
             width: 100%;
           }
 
           .settings-column {
             gap: 1.25rem;
+          }
+
+          .data-purge-section {
+            padding: 1.25rem;
           }
         }
 
@@ -745,6 +836,18 @@ const AdminUploadPage = ({
 
           .text-input {
             max-width: 100%;
+          }
+
+          .purge-title {
+            font-size: 1.5rem;
+          }
+
+          .purge-description {
+            font-size: 0.85rem;
+          }
+
+          .purge-button {
+            height: 44px;
           }
         }
       `}</style>
@@ -784,12 +887,15 @@ AdminUploadPage.propTypes = {
   // Actions
   saveSettings: PropTypes.func.isRequired,
   generateTimetable: PropTypes.func.isRequired,
-  isGenerating: PropTypes.bool
+  isGenerating: PropTypes.bool,
+  deleteAllUploadedData: PropTypes.func.isRequired,
+  isPurging: PropTypes.bool
 };
 
 AdminUploadPage.defaultProps = {
   isUploading: false,
-  isGenerating: false
+  isGenerating: false,
+  isPurging: false
 };
 
 export default AdminUploadPage;
