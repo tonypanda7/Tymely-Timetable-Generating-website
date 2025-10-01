@@ -29,6 +29,8 @@ const AdminUploadPage = ({
   setClassDuration,
   freePeriodPercentage,
   setFreePeriodPercentage,
+  // computed time slots from parent (may include LUNCH marker)
+  timeSlots = [] ,
   
   // Actions
   saveSettings,
