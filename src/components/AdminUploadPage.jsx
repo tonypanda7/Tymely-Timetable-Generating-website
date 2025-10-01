@@ -323,7 +323,7 @@ const AdminUploadPage = ({
         >
           Save Settings
         </button>
-        
+
         <button
           onClick={generateTimetable}
           disabled={isUploading || isGenerating}
@@ -332,6 +332,23 @@ const AdminUploadPage = ({
           {isGenerating ? 'Generating...' : 'Generate Timetable'}
         </button>
       </div>
+
+      <section className="data-purge-section">
+        <h2 className="purge-title">Danger Zone</h2>
+        <p className="purge-description">
+          Deleting all uploaded data removes every dataset, generated timetable, and stored CSV upload from the system.
+        </p>
+        <button
+          onClick={deleteAllUploadedData}
+          disabled={isUploading || isPurging}
+          className="purge-button"
+        >
+          {isPurging ? 'Deleting All Data...' : 'Delete All Uploaded Data'}
+        </button>
+        {isPurging && (
+          <p className="purge-status">Deleting data, please wait. Do not close this tab.</p>
+        )}
+      </section>
 
       <style>{`
         .admin-upload-page {
