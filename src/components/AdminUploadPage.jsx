@@ -239,16 +239,16 @@ const AdminUploadPage = ({
               value={hoursPerDay}
               onChange={setHoursPerDay}
               options={[
-                { value: 1, label: '1 Hour' },
-                { value: 2, label: '2 Hours' },
-                { value: 3, label: '3 Hours' },
-                { value: 4, label: '4 Hours' },
-                { value: 5, label: '5 Hours' },
-                { value: 6, label: '6 Hours' },
-                { value: 7, label: '7 Hours' },
-                { value: 8, label: '8 Hours' },
-                { value: 9, label: '9 Hours' },
-                { value: 10, label: '10 Hours' }
+                { value: 1, label: '1 Class' },
+                { value: 2, label: '2 Classes' },
+                { value: 3, label: '3 Classes' },
+                { value: 4, label: '4 Classes' },
+                { value: 5, label: '5 Classes' },
+                { value: 6, label: '6 Classes' },
+                { value: 7, label: '7 Classes' },
+                { value: 8, label: '8 Classes' },
+                { value: 9, label: '9 Classes' },
+                { value: 10, label: '10 Classes' }
               ]}
             />
             
