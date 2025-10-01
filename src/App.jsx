@@ -435,6 +435,9 @@ export default function App() {
         table.forEach((daySlots, dayIdx) => {
           daySlots.forEach((slot, periodIdx) => {
             if (periodIdx < hours && dayIdx < days) {
+              // Skip assigning to break/lunch slots
+              if (base[dayIdx] && base[dayIdx][periodIdx] && base[dayIdx][periodIdx].status === 'break') return;
+
               if (slot && slot.teacherId === teacherId) {
                 const displayName = resolveElectiveSubjectForTeacher({ classesList: classes, className, originalName: slot.subjectName, status: slot.status, teacherId });
                 base[dayIdx][periodIdx] = {
