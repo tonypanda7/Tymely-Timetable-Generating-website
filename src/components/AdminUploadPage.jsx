@@ -672,6 +672,69 @@ const AdminUploadPage = ({
           transform: none;
         }
 
+        .data-purge-section {
+          margin-top: 3rem;
+          padding: 2rem;
+          border-radius: 0.75rem;
+          background: #fef2f2;
+          box-shadow: 0 4px 40px 0 rgba(220, 38, 38, 0.15);
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .purge-title {
+          font-family: 'Roboto Condensed', sans-serif;
+          font-size: 2rem;
+          font-weight: 700;
+          color: #991b1b;
+          margin: 0;
+        }
+
+        .purge-description {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          color: #7f1d1d;
+          margin: 0;
+          line-height: 1.6;
+        }
+
+        .purge-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 246px;
+          height: 48px;
+          padding: 0.625rem 1.5rem;
+          border-radius: 0.5rem;
+          background: #dc2626;
+          border: none;
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .purge-button:hover:not(:disabled) {
+          background: #b91c1c;
+          transform: translateY(-1px);
+        }
+
+        .purge-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .purge-status {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          color: #dc2626;
+          margin: 0;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
           .admin-upload-page {
