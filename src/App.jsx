@@ -2020,7 +2020,7 @@ export default function App() {
           <main className="main-content">
             <AdminUploadPage
               // Upload handlers
-              timeSlots={calculateTimeSlots()}
+              timeSlots={cachedTimeSlots}
 
               handleTeacherCSV={handleTeacherCSV}
               handleStudentCSV={handleStudentCSV}
@@ -2134,7 +2134,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           classes={classes}
           courses={courses}
           programs={programs}
@@ -2151,7 +2151,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           breakSlots={breakSlots}
           teachers={teachers}
         />
@@ -2868,7 +2868,7 @@ export default function App() {
           generatedTimetables={generatedTimetables}
           workingDays={workingDays}
           hoursPerDay={hoursPerDay}
-          timeSlots={calculateTimeSlots()}
+          timeSlots={cachedTimeSlots}
           handleSlotToggle={handleSlotToggle}
           downloadTimetable={downloadTimetable}
           studentClass={studentClass}
