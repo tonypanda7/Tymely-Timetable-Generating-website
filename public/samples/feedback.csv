@@ -1,0 +1,3 @@
+StudentID,TeacherID,TeacherRating,CourseCode,CourseName,CourseRating
+S-1001,T-001,4.5,CS201,Data Structures,4
+S-1002,T-002,4,CS205,Computer Networks,3.5

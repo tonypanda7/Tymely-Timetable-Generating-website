@@ -1,0 +1,4 @@
+StudentID,Name,Program,Semester,Section,MinorCourses,SkillBasedCourses,AbilityEnhancementCourses,ValueAddedCourses
+S-1001,Bob Lee,BSc Computer Science,3,B,MATH201,Python Basics,Communication Skills,Entrepreneurship
+S-1002,Neha Gupta,BSc Computer Science,3,B,,Spreadsheets,,
+S-1003,John Doe,BCom Accounting,2,A,STAT101,Excel for Finance,English Proficiency,Financial Literacy

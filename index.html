@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timetable App</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+    
+    <script>
+      // Keep your Firebase config script here as before
+      const firebaseConfig = {
+        apiKey: "AIzaSyCMxiDs7GdtIGpR_apl9uNQKUa2R9KIDVo",
+        authDomain: "my-timetable-app-69006.firebaseapp.com",
+        projectId: "my-timetable-app-69006",
+        storageBucket: "my-timetable-app-69006.firebasestorage.app",
+        messagingSenderId: "77238679632",
+        appId: "1:77238679632:web:38c01ca18a4010a04af955",
+        measurementId: "G-QHRKFX20WS"
+      };
+      window.__firebase_config = JSON.stringify(firebaseConfig);
+      window.__app_id = 'local-dev-app';
+      window.__initial_auth_token = null;
+    </script>
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

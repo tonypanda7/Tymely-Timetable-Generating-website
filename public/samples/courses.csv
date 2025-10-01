@@ -1,0 +1,4 @@
+Program,Semester,CourseName,CourseCode,Credits,Category,IsLab,Style,NumSemesters,MinTotalCredits
+BSc Computer Science,2,Data Structures,CS201,4,Major,No,hard_theory,8,120
+BSc Computer Science,2,Computer Networks,CS205,3,Major,No,hard_theory,8,120
+BCom Accounting,2,Statistics for Business,BC102,3,Minor,No,hard_theory,6,100
