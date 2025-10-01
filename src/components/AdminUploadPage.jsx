@@ -837,6 +837,18 @@ const AdminUploadPage = ({
           .text-input {
             max-width: 100%;
           }
+
+          .purge-title {
+            font-size: 1.5rem;
+          }
+
+          .purge-description {
+            font-size: 0.85rem;
+          }
+
+          .purge-button {
+            height: 44px;
+          }
         }
       `}</style>
     </div>
