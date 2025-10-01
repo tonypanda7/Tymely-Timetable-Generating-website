@@ -1139,6 +1139,44 @@ export default function App() {
 
   const saveSettings = async () => {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
+
+    // Validate lunch window and ensure breakSlots do not include lunch index
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+
+      // If lunch indices present, validate their times fall within 12:00 - 13:40 window
+      for (const li of lunchIndices) {
+        const label = headerSlots[li] || '';
+        const m = String(label).match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+        if (m) {
+          const toMin = (s) => { const [h, mm] = s.split(':').map(Number); return h * 60 + mm; };
+          const start = toMin(m[1]);
+          const end = toMin(m[2]);
+          const earliest = 12 * 60; // 12:00
+          const latestEnd = 13 * 60 + 40; // 13:40
+          if (start < earliest || end > latestEnd) {
+            showMessage(`Computed lunch slot (${label}) must be between 12:00 and 13:40. Adjust class times or duration.`, 'error');
+            return;
+          }
+        } else {
+          showMessage('Unable to parse computed lunch slot label. Check timetable slot configuration.', 'error');
+          return;
+        }
+      }
+
+      // Ensure breakSlots does not include lunch indices
+      const breaks = Array.isArray(breakSlots) ? breakSlots.slice() : [];
+      const intersection = breaks.filter(b => lunchIndices.includes(b));
+      if (intersection.length > 0) {
+        showMessage(`Break Slots must not include lunch index(es): ${intersection.join(', ')}. Remove them from Break Slots.`, 'error');
+        return;
+      }
+    } catch (err) {
+      // ignore validation errors above and proceed to saving; but log
+      console.warn('Validation error computing lunch/break slots', err);
+    }
+
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
       await setDoc(settingsRef, {
