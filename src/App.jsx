@@ -274,7 +274,11 @@ export default function App() {
 
       const classesCol = collection(db, "artifacts", appId, "public", "data", "classes");
       const unsubscribeClasses = onSnapshot(classesCol, (snapshot) => {
-        const classList = snapshot.docs.map((d) => d.data());
+        const classList = snapshot.docs.map((d) => {
+          const data = d.data() || {};
+          const name = data.name || d.id;
+          return { id: d.id, name, ...data };
+        });
         setClasses(classList);
       }, onErr('classes'));
 
