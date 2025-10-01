@@ -790,12 +790,17 @@ const AdminUploadPage = ({
           }
 
           .save-button,
-          .generate-button {
+          .generate-button,
+          .purge-button {
             width: 100%;
           }
 
           .settings-column {
             gap: 1.25rem;
+          }
+
+          .data-purge-section {
+            padding: 1.25rem;
           }
         }
 
