@@ -410,7 +410,7 @@ const Dashboard = ({
                             if (cur && cur.status === 'break') {
                               cells.push(
                                 <td key={`break-${dayIdx}-${si}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-600 text-neutral-200">{slotLabel || 'Break'}</span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">{slotLabel || 'Break'}</span>
                                 </td>
                               );
                               p++;
@@ -421,7 +421,7 @@ const Dashboard = ({
                             if (slotLabel && String(slotLabel).toUpperCase().includes('LUNCH')) {
                               cells.push(
                                 <td key={`lunch-${dayIdx}-${si}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                                 </td>
                               );
                               continue;
@@ -599,7 +599,7 @@ const Dashboard = ({
                   if (cur && cur.status === 'break') {
                     cells.push(
                       <td key={`break-${dayIdx}-${si}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-600 text-neutral-200">{slotLabel || 'Break'}</span>
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">{slotLabel || 'Break'}</span>
                       </td>
                     );
                     p++;
@@ -609,7 +609,7 @@ const Dashboard = ({
                   if (slotLabel && String(slotLabel).toUpperCase().includes('LUNCH')) {
                     cells.push(
                       <td key={`slunch-${dayIdx}-${si}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                       </td>
                     );
                     continue;
