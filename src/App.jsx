@@ -2583,8 +2583,8 @@ export default function App() {
                 <input type="number" value={workingDays} onChange={e => setWorkingDays(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <label className="text-sm font-medium">Hours Per Day:</label>
-                <input type="number" value={hoursPerDay} onChange={e => setHoursPerDay(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="text-sm font-medium">Classes Per Day:</label>
+                <input type="number" value={Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0))} onChange={e => setHoursPerDay(Number(e.target.value) + (Array.isArray(breakSlots) ? breakSlots.length : 0))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <label className="text-sm font-medium">Break Slots (comma-separated, 0-based):</label>
@@ -2682,7 +2682,7 @@ export default function App() {
                                 if (i === lunchAfter - 1) {
                                   cells.push(
                                     <td key={`lunch-${dayIdx}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                                     </td>
                                   );
                                 }
@@ -2755,7 +2755,7 @@ export default function App() {
                                 if (i === lunchAfter - 1) {
                                   cells.push(
                                     <td key={`tlunch-${dayIdx}`} className="px-4 md:px-6 py-4 whitespace-nowrap">
-                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-500 text-white">Lunch Break</span>
+                                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">Lunch</span>
                                     </td>
                                   );
                                 }
