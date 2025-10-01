@@ -236,8 +236,8 @@ const AdminUploadPage = ({
             <DropdownInput
               label="Classes Per Day:"
               id="hours-per-day"
-              value={hoursPerDay}
-              onChange={setHoursPerDay}
+              value={Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0))}
+              onChange={(v) => setHoursPerDay(Number(v) + (Array.isArray(breakSlots) ? breakSlots.length : 0))}
               options={[
                 { value: 1, label: '1 Class' },
                 { value: 2, label: '2 Classes' },
