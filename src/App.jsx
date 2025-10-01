@@ -1447,7 +1447,7 @@ export default function App() {
   };
 
   // Memoize computed time slots to avoid producing a new array on every render
-  const cachedTimeSlots = React.useMemo(() => calculateTimeSlots(), [timetableSettings, hoursPerDay, classStartTime, classDuration, breakSlots, dayStartTime]);
+  const cachedTimeSlots = useMemo(() => calculateTimeSlots(), [timetableSettings, hoursPerDay, classStartTime, classDuration, breakSlots, dayStartTime]);
 
   const approveCancellation = async (c) => {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
