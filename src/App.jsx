@@ -1979,6 +1979,8 @@ export default function App() {
           <main className="main-content">
             <AdminUploadPage
               // Upload handlers
+              timeSlots={calculateTimeSlots()}
+
               handleTeacherCSV={handleTeacherCSV}
               handleStudentCSV={handleStudentCSV}
               handleClassroomsCSV={handleClassroomsCSV}
