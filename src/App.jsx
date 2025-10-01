@@ -769,56 +769,59 @@ export default function App() {
     };
 
     const updates = [];
+    const updatedClasses = [];
     for (const clsDoc of classesSnap.docs) {
-      const cls = clsDoc.data();
-      const program = String(cls.program || '');
-      const sem = Number(cls.semester || cls.sem || 1);
+      const clsData = clsDoc.data() || {};
+      const classId = clsDoc.id;
+      const className = clsData.name || classId;
+      const program = String(clsData.program || '');
+      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
 
       const relevant = coursesList.filter(c => String(c.program || '') === program && Number(c.semester || 0) === sem);
-    // Separate elective courses and normal courses. Electives will be grouped into an elective group
-    const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
-    const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
+      const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
+      const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
 
-    const subjects = normalList.map(c => ({
-      name: c.name,
-      credits: Number(c.credits || 0),
-      teachers: pickTeachersForCourse(c.name),
-      courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
-      isLab: !!c.isLab,
-      delivery: c.isLab ? 'lab' : 'theory',
-      style: c.style || 'hard_theory',
-      sem: Number(c.semester || 1),
-    }));
-
-    // If there are electives for this program+sem, create an elective group so students choose from them
-    if (electivesList.length > 0) {
-      const details = electivesList.map(e => ({
-        name: e.name,
-        isLab: !!e.isLab,
-        style: e.style || 'hard_theory',
-        teachers: pickTeachersForCourse(e.name),
-        credits: Number(e.credits || 0),
+      const subjects = normalList.map(c => ({
+        name: c.name,
+        credits: Number(c.credits || 0),
+        teachers: pickTeachersForCourse(c.name),
+        courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
+        isLab: !!c.isLab,
+        delivery: c.isLab ? 'lab' : 'theory',
+        style: c.style || 'hard_theory',
+        sem: Number(c.semester || 1),
       }));
 
-      const group = {
-        name: `${program} Electives (Sem ${sem})`,
-        credits: details.reduce((s, d) => s + Number(d.credits || 0), 0),
-        teachers: [],
-        courseType: 'elective',
-        isLab: false,
-        delivery: 'theory',
-        style: 'group',
-        sem: sem,
-        electiveOptionsDetailed: details,
-        electiveChooseCount: 1,
-      };
-      subjects.push(group);
-    }
+      if (electivesList.length > 0) {
+        const details = electivesList.map(e => ({
+          name: e.name,
+          isLab: !!e.isLab,
+          style: e.style || 'hard_theory',
+          teachers: pickTeachersForCourse(e.name),
+          credits: Number(e.credits || 0),
+        }));
 
-      updates.push(setDoc(doc(classesRef, sanitizeId(cls.name)), { subjects }, { merge: true }));
+        const group = {
+          name: `${program} Electives (Sem ${sem})`,
+          credits: details.reduce((s, d) => s + Number(d.credits || 0), 0),
+          teachers: [],
+          courseType: 'elective',
+          isLab: false,
+          delivery: 'theory',
+          style: 'group',
+          sem,
+          electiveOptionsDetailed: details,
+          electiveChooseCount: 1,
+        };
+        subjects.push(group);
+      }
+
+      updates.push(setDoc(doc(classesRef, classId), { subjects }, { merge: true }));
+      updatedClasses.push({ ...clsData, id: classId, name: className, subjects });
     }
 
     await Promise.all(updates);
+    if (updatedClasses.length > 0) setClasses(updatedClasses);
   };
 
   const handleSubjectAdd = async () => {
