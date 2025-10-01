@@ -1267,6 +1267,9 @@ export default function App() {
       if (!Array.isArray(table)) return;
       table.forEach((daySlots, dayIdx) => {
         daySlots.forEach((slot, periodIdx) => {
+          // Skip if the target slot is already a break/lunch marker
+          if (base[dayIdx] && base[dayIdx][periodIdx] && base[dayIdx][periodIdx].status === 'break') return;
+
           if (slot && slot.teacherId === teacherId) {
             const displayName = resolveElectiveSubjectForTeacher({ classesList: classes, className, originalName: slot.subjectName, status: slot.status, teacherId });
             base[dayIdx][periodIdx] = {
