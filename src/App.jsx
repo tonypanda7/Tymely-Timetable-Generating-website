@@ -631,6 +631,13 @@ export default function App() {
 
         const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
         const sanitizeId = (s) => String(s).replace(/\//g, '_').replace(/\s+/g, '-');
+        const existingClassIndex = classes.reduce((acc, cls) => {
+          if (!cls) return acc;
+          const nameKey = cls.name || cls.id;
+          if (nameKey) acc[nameKey] = cls;
+          if (cls.id) acc[cls.id] = cls;
+          return acc;
+        }, {});
         const classesMap = {};
 
         const studentsPublicRef = collection(db, "artifacts", appId, "public", "data", "students");
@@ -645,9 +652,23 @@ export default function App() {
           const semester = Number(get(row, ['Semester', 'Sem'])) || 1;
           const section = get(row, ['Section', 'ClassSection']) ? String(get(row, ['Section', 'ClassSection'])) : 'A';
           const classKey = `${program || 'Program'}-SEM${semester}-${section}`;
+          const classId = sanitizeId(classKey);
+
+          if (!classKey || !studentId) {
+            throw new Error(`Missing class or student identifier in row: ${JSON.stringify(row)}`);
+          }
 
           if (!classesMap[classKey]) {
-            classesMap[classKey] = { name: classKey, program, semester, section, subjects: [], students: [] };
+            const existing = existingClassIndex[classKey] || existingClassIndex[classId] || {};
+            classesMap[classKey] = {
+              id: existing.id || classId,
+              name: classKey,
+              program,
+              semester,
+              section,
+              subjects: Array.isArray(existing.subjects) ? existing.subjects : [],
+              students: Array.isArray(existing.students) ? [...existing.students] : [],
+            };
           }
           classesMap[classKey].students.push(studentId);
 
@@ -670,7 +691,9 @@ export default function App() {
 
         // Upload classes
         Object.keys(classesMap).forEach((clsName) => {
-          uploads.push(setDoc(doc(classPublicRef, sanitizeId(clsName)), classesMap[clsName], { merge: true }));
+          const cls = classesMap[clsName];
+          cls.students = Array.from(new Set(cls.students));
+          uploads.push(setDoc(doc(classPublicRef, cls.id), cls, { merge: true }));
         });
 
         // Remove classes not present in current dataset
@@ -694,6 +717,7 @@ export default function App() {
         });
 
         await Promise.all(uploads);
+        setClasses(Object.values(classesMap));
 
         // Auto-populate subjects for all classes using existing Courses dataset
         try {
