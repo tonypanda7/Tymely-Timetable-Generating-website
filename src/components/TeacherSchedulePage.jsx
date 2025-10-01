@@ -614,15 +614,7 @@ const TeacherSchedulePage = ({
                           return (
                             <td key={dayIdx} className="px-2 py-2">
                               <div className="w-full h-8 sm:h-10 flex items-center justify-center">
-                                <span
-                                  className="text-[#717182] text-center"
-                                  style={{
-                                    fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif',
-                                    fontSize: '12px',
-                                    fontWeight: 400,
-                                    lineHeight: '16px'
-                                  }}
-                                >
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
                                   {/(LUNCH)/i.test(headerLabel) || /lunch/i.test(subj) ? 'Lunch' : 'Break'}
                                 </span>
                               </div>
