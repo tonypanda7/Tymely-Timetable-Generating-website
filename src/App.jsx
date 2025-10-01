@@ -415,6 +415,19 @@ export default function App() {
         });
       }
 
+      // Also mark computed lunch slots (from calculateTimeSlots) as non-assignable Lunch
+      try {
+        const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+        const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+        for (let d = 0; d < days; d++) {
+          lunchIndices.forEach((li) => {
+            if (li >= 0 && li < hours) base[d][li] = { subjectName: 'Lunch', className: '', status: 'break', teacherId: '' };
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+
       // Fill assigned slots
       Object.keys(generatedTimetables).forEach((className) => {
         const table = generatedTimetables[className];
@@ -1173,12 +1186,22 @@ export default function App() {
       }
     }
 
+    // Ensure lunch periods are treated as break slots for generation
+    let computedBreakSlots = Array.isArray(breakSlots) ? breakSlots.slice() : [];
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+      computedBreakSlots = Array.from(new Set([...(computedBreakSlots || []), ...lunchIndices]));
+    } catch (e) {
+      // ignore
+    }
+
     const { timetables: newTimetables, teacherHoursLeft } = acGenerateTimetables({
       classes,
       teachers,
       workingDays,
       hoursPerDay,
-      breakSlots: breakSlots || [],
+      breakSlots: computedBreakSlots || [],
       electivePeriodIndices: electiveSlots || [],
       programs,
       courses,
@@ -1224,6 +1247,17 @@ export default function App() {
         }
       });
     }
+
+    // Also mark lunch slots in this base so lunch cannot be assigned
+    try {
+      const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+      const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+      for (let d = 0; d < days; d++) {
+        lunchIndices.forEach((li) => {
+          if (li >= 0 && li < hours) base[d][li] = { subjectName: 'Lunch', className: '', status: 'break', teacherId: '' };
+        });
+      }
+    } catch (e) {}
 
     Object.keys(generatedTimetables).forEach((className) => {
       const table = generatedTimetables[className];
