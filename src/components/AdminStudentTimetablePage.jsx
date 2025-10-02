@@ -12,7 +12,8 @@ const AdminStudentTimetablePage = ({
   hoursPerDay = 7,
   timeSlots = [],
   breakSlots = [],
-  teachers = []
+  teachers = [],
+  onLogout
 }) => {
   // Days labels
   const daysLabels = useMemo(() => {
@@ -94,6 +95,7 @@ const AdminStudentTimetablePage = ({
         onNavigate={onNavigate}
         role={role}
         collegeId={collegeId}
+        onLogout={onLogout}
       />
       
       <main className="main-content">
