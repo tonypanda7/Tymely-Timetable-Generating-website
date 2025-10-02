@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+import AddSubjectModal from './AddSubjectModal.jsx';
 
 const CourseManagementPage = ({
   classes = [],
