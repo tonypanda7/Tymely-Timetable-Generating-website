@@ -13,6 +13,9 @@ const AdminUploadPage = ({
   // Counts
   teacherCount = 0,
   studentCount = 0,
+  classroomsCount = 0,
+  coursesCount = 0,
+  feedbackCount = 0,
 
   // Timetable settings
   workingDays,
@@ -217,11 +220,13 @@ const AdminUploadPage = ({
               title="Upload Classrooms CSV"
               uploadType="classrooms"
               handler={handleClassroomsCSV}
+              footer={<p className="upload-count">Current classrooms: {classroomsCount}</p>}
             />
             <UploadBox
               title="Upload Courses CSV"
               uploadType="courses"
               handler={handleCoursesCSV}
+              footer={<p className="upload-count">Current courses: {coursesCount}</p>}
             />
           </div>
           
@@ -230,6 +235,7 @@ const AdminUploadPage = ({
               title="Upload Students' Feedback CSV"
               uploadType="feedback"
               handler={handleFeedbackCSV}
+              footer={<p className="upload-count">Feedback entries: {feedbackCount}</p>}
             />
           </div>
         </div>
