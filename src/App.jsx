@@ -2262,6 +2262,9 @@ export default function App() {
               // Counts
               teacherCount={teachers.length}
               studentCount={classes.reduce((sum, cls) => sum + (Array.isArray(cls.students) ? cls.students.length : 0), 0)}
+              classroomsCount={classroomsCount}
+              coursesCount={coursesCount}
+              feedbackCount={feedbackCount}
 
               // Timetable settings
               workingDays={workingDays}
