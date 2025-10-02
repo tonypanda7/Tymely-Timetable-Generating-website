@@ -554,6 +554,30 @@ const AdminUploadPage = ({
           gap: 0.75rem;
         }
 
+        .toggle-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .toggle-inline {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .toggle-checkbox {
+          width: 16px;
+          height: 16px;
+        }
+
+        .toggle-help {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.875rem;
+          color: #000;
+          opacity: 0.7;
+        }
+
         .dropdown-label,
         .time-label,
         .text-label {
