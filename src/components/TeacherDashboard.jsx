@@ -421,18 +421,20 @@ const TeacherDashboard = ({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {Array.from({ length: Math.min(workingDays, 6) }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedDay(i)}
-                    className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 ${
-                      i === selectedDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
-                    <span className="text-sm font-medium text-black">{10 + i}</span>
-                    <span className="text-sm font-medium text-black uppercase">{getWeekdayLabel(i)}</span>
-                  </button>
-                ))}
+                {displayedDates.map((dt, i) => {
+                  const dayLabel = dt.toLocaleString('default', { weekday: 'short' });
+                  const dateNum = dt.getDate();
+                  return (
+                    <button
+                      key={`td-${dt.toISOString()}`}
+                      onClick={() => setSelectedDay(i)}
+                      className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 ${i === selectedDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                      <span className="text-sm font-medium text-black">{dateNum}</span>
+                      <span className="text-sm font-medium text-black uppercase">{dayLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col">
