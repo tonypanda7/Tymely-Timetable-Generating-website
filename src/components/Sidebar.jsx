@@ -186,7 +186,7 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           padding: 2rem 0;
           z-index: 100;
         }
-        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; }
+        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; overflow-y: auto; }
 
         .sidebar.light { background: #FFF; border-right: 1px solid rgba(0,0,0,0.1); }
         .sidebar.light .nav-item { color: #0A0A0A; }
