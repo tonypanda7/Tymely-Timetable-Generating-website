@@ -2803,15 +2803,13 @@ export default function App() {
                   <div key={`timeslot-${i}`} className="text-xs px-3 py-1 rounded-full bg-neutral-700 text-neutral-200">{s}</div>
                 ))}
               </div>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-4">
-                  <label className="text-sm font-medium">Bypass hoursLeft for substitutions:</label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={bypassHoursCheck} onChange={e => setBypassHoursCheck(Boolean(e.target.checked))} className="w-4 h-4" />
-                    <span className="text-xs text-neutral-300">Allow teachers to accept substitutions regardless of hoursLeft</span>
-                  </label>
-                </div>
-                <div className="flex gap-3">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={bypassHoursCheck} onChange={e => updateBypassSetting(Boolean(e.target.checked))} className="w-4 h-4" />
+                  <span className="text-sm text-neutral-300">Bypass hoursLeft for substitutions</span>
+                </label>
+
+                <div className="ml-auto flex gap-3">
                   <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700" onClick={saveSettings}>Save Settings</button>
                   <button
                     className={`px-4 py-2 rounded-lg font-semibold transition-colors ${isGenerateEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-neutral-600 cursor-not-allowed'}`}
