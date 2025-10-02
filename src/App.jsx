@@ -1555,6 +1555,20 @@ export default function App() {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
     if (!collegeId) { showMessage('Not signed in as a teacher.', 'error'); return; }
     try {
+      // If bypass is not enabled, check teacher hoursLeft
+      if (!bypassHoursCheck) {
+        try {
+          const teacherDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId));
+          const data = teacherDoc.exists() ? (teacherDoc.data() || {}) : (teachers.find(t => t.id === collegeId) || {});
+          const left = Number(data.hoursLeft ?? data.weeklyRequiredHours ?? 0);
+          if (!Number.isFinite(left) || left <= 0) { showMessage('No hours left to take substitution.', 'error'); return; }
+        } catch (readErr) {
+          console.warn('Could not verify hoursLeft, aborting accept to be safe.', readErr);
+          showMessage('Unable to verify hours left. Try again later.', 'error');
+          return;
+        }
+      }
+
       const tRef = doc(db, "artifacts", appId, "public", "data", "timetables", offer.className);
       const tDoc = await getDoc(tRef);
       if (!tDoc.exists()) { showMessage('Class timetable not found.', 'error'); return; }
@@ -1577,6 +1591,19 @@ export default function App() {
       // Reserve the slot
       table[offer.dayIndex][offer.periodIndex] = { subjectName: offer.subjectName, className: offer.className, status: 'confirmed', teacherId: collegeId };
       await setDoc(tRef, { timetable: JSON.stringify(table) });
+
+      // If bypass disabled, decrement hoursLeft by 1
+      if (!bypassHoursCheck) {
+        try {
+          const teacherDoc2 = await getDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId));
+          const data2 = teacherDoc2.exists() ? (teacherDoc2.data() || {}) : (teachers.find(t => t.id === collegeId) || {});
+          const leftNow = Number(data2.hoursLeft ?? data2.weeklyRequiredHours ?? 0);
+          const newLeft = Math.max(0, leftNow - 1);
+          await setDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId), { hoursLeft: newLeft }, { merge: true });
+        } catch (err) {
+          console.warn('Failed to decrement hoursLeft, continuing nonetheless.', err);
+        }
+      }
 
       // Mark notification accepted
       await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", offer.id), { status: 'accepted', actedAt: Date.now() }, { merge: true });
