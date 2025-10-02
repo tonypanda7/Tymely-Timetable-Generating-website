@@ -76,10 +76,29 @@ const Dashboard = ({
     return SUBJECT_COLOR_PALETTE[idx];
   };
 
-  const computedTimeSlots = (Array.isArray(timeSlots) && timeSlots.length) ? timeSlots : [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '1:00 PM', '2:00 PM', '3:00 PM'
+  const defaultTimeSlotsForStudentView = [
+    '9:00-10:00',
+    '10:00-11:00',
+    '11:00-12:00',
+    '12:00-1:00',
+    '1:00-2:00',
+    '2:00-3:00'
   ];
+
+  const periodCount = useMemo(() => {
+    if (Array.isArray(timeSlots) && timeSlots.length) return timeSlots.length;
+    if (Number.isFinite(Number(hoursPerDay))) return Number(hoursPerDay);
+    try {
+      const table = (generatedTimetables && studentClass && Array.isArray(generatedTimetables[studentClass])) ? generatedTimetables[studentClass] : [];
+      if (Array.isArray(table) && table.length) return table.reduce((m, day) => Math.max(m, Array.isArray(day) ? day.length : 0), 0);
+    } catch (e) { /* ignore */ }
+    return defaultTimeSlotsForStudentView.length;
+  }, [timeSlots, hoursPerDay, generatedTimetables, studentClass]);
+
+  const computedTimeSlots = useMemo(() => {
+    if (Array.isArray(timeSlots) && timeSlots.length) return timeSlots.slice(0, periodCount);
+    return defaultTimeSlotsForStudentView.slice(0, periodCount);
+  }, [timeSlots, periodCount]);
 
   // Compute enrolled courses for the current student (mandatory + chosen electives)
   const enrolledCourses = useMemo(() => {
