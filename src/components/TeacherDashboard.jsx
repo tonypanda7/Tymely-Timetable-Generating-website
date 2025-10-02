@@ -21,7 +21,9 @@ const TeacherDashboard = ({
   teachers = [],
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState(0); // Today's day for timetable
+  const DISPLAY_DAYS = 5;
+  const DISPLAY_CENTER = Math.floor(DISPLAY_DAYS / 2);
+  const [selectedDay, setSelectedDay] = useState(DISPLAY_CENTER); // index in displayedDates
 
   const slotDescriptors = useMemo(() => {
     if (!Array.isArray(timeSlots)) return [];
