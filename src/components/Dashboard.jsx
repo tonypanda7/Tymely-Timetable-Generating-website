@@ -1015,18 +1015,20 @@ const Dashboard = ({
               
               {/* Week navigation */}
               <div className="flex gap-2 mb-6">
-                {weekDays.map((day, index) => (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedWeekDay(index)}
-                    className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 font-poppins ${
-                      index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-black">{weekNumbers[index]}</span>
-                    <span className="text-xs font-medium text-black uppercase">{day}</span>
-                  </button>
-                ))}
+                {displayedDates.map((dt, index) => {
+                  const dayLabel = dt.toLocaleString('default', { weekday: 'short' });
+                  const dateNum = dt.getDate();
+                  return (
+                    <button
+                      key={`d2-${dt.toISOString()}`}
+                      onClick={() => setSelectedWeekDay(index)}
+                      className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 font-poppins ${index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                      <span className="text-sm font-semibold text-black">{dateNum}</span>
+                      <span className="text-xs font-medium text-black uppercase">{dayLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Timetable widget */}
