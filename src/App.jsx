@@ -319,6 +319,7 @@ export default function App() {
           setDayStartTime(settings.dayStartTime ?? settings.classStartTime ?? "09:00");
           setDayEndTime(settings.dayEndTime ?? "17:00");
           setFreePeriodPercentage(settings.freePeriodPercentage ?? 20);
+          setBypassHoursCheck(Boolean(settings.bypassHoursCheck));
         }
         setGeneratedTimetables(timetableMap);
       }, onErr('timetables'));
