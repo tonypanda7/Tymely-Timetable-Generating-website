@@ -117,6 +117,16 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
 
   const visibleMenuItems = menuItems.filter(item => item.visible);
 
+  const handleItemClick = (item) => {
+    if (item.action === 'logout') {
+      if (typeof onLogout === 'function') {
+        onLogout();
+      }
+      return;
+    }
+    onNavigate(item.id);
+  };
+
   return (
     <aside className={`sidebar ${variant === 'light' ? 'light' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Hamburger Menu */}
