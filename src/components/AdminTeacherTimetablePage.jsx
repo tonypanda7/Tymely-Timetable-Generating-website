@@ -13,7 +13,8 @@ const AdminTeacherTimetablePage = ({
   timeSlots = [],
   classes = [],
   courses = [],
-  programs = []
+  programs = [],
+  onLogout
 }) => {
   // Build teacher timetables using the same logic as App.jsx
   const buildTeacherTimetableFor = (teacherId) => {
@@ -100,6 +101,7 @@ const AdminTeacherTimetablePage = ({
         onNavigate={onNavigate}
         role={role}
         collegeId={collegeId}
+        onLogout={onLogout}
       />
       
       <main className="main-content">
