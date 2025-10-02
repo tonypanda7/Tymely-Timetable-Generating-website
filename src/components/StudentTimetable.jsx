@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react';
 
+import { jsPDF } from 'jspdf';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
 const StudentTimetable = ({
   onLogout,
   onNavigate,
@@ -150,6 +154,136 @@ const StudentTimetable = ({
 
   const [collapsed, setCollapsed] = useState(false);
   const sidebarWidth = collapsed ? 72 : 220; // match Dashboard student sidebar widths
+
+  // Build export matrix (header + rows)
+  const buildExportMatrix = () => {
+    const header = ['Time', ...WEEKDAY_LABELS.slice(0, Math.min(workingDays, WEEKDAY_LABELS.length))];
+    const rows = Array.from({ length: periodCount }, (_, periodIdx) => {
+      const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
+      const cols = [timeSlot];
+      for (let dayIdx = 0; dayIdx < Math.min(workingDays, WEEKDAY_LABELS.length); dayIdx++) {
+        const cellData = getCellContent(dayIdx, periodIdx);
+        let val = 'Free';
+        if (cellData.status === 'break') val = cellData.subjectName || 'Break';
+        else if (cellData.status !== 'free') val = cellData.className ? `${cellData.subjectName} — ${cellData.className}` : `${cellData.subjectName}`;
+        cols.push(val);
+      }
+      return cols;
+    });
+    return [header, ...rows];
+  };
+
+  const downloadAsExcel = () => {
+    const data = buildExportMatrix();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    // Set column widths
+    const colWidths = data[0].map((h, i) => ({ wch: i === 0 ? 14 : 22 }));
+    ws['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.xlsx`;
+    saveAs(new Blob([out], { type: 'application/octet-stream' }), filename);
+  };
+
+  const downloadAsText = () => {
+    const data = buildExportMatrix();
+    if (!data || !data.length) return;
+    const cols = data[0].length;
+    const colWidths = Array(cols).fill(0);
+    data.forEach(row => {
+      for (let i = 0; i < cols; i++) {
+        const s = String(row[i] == null ? '' : row[i]);
+        colWidths[i] = Math.max(colWidths[i], s.length);
+      }
+    });
+
+    const lines = data.map(row => {
+      return row.map((cell, i) => {
+        const s = String(cell == null ? '' : cell);
+        return s + ' '.repeat(colWidths[i] - s.length);
+      }).join(' | ');
+    }).join('\n');
+
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.txt`;
+    saveAs(new Blob([lines], { type: 'text/plain;charset=utf-8' }), filename);
+  };
+
+  const downloadAsPDF = () => {
+    const data = buildExportMatrix();
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    const title = `${studentClass || 'Class'} — Weekly Timetable`;
+    doc.text(title, margin, margin);
+
+    // Table setup
+    const startY = margin + 20;
+    const cols = data[0].length;
+    const colWidths = Array.from({ length: cols }, (_, i) => (i === 0 ? 90 : Math.floor((pageWidth - margin * 2 - 90) / (cols - 1))));
+    const lineHeight = 16;
+
+    let y = startY;
+
+    // Header row
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    let x = margin;
+    for (let c = 0; c < cols; c++) {
+      const text = String(data[0][c] || '');
+      // header background
+      doc.setFillColor(236, 236, 240);
+      doc.rect(x, y, colWidths[c], lineHeight + 6, 'F');
+      doc.setTextColor(10, 10, 10);
+      doc.text(text, x + 6, y + lineHeight);
+      x += colWidths[c];
+    }
+    y += lineHeight + 6;
+
+    // Body rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    for (let r = 1; r < data.length; r++) {
+      // compute row height based on wrapped text
+      const wrappedByCol = [];
+      let rowHeight = lineHeight + 6;
+      for (let c = 0; c < cols; c++) {
+        const cellText = String(data[r][c] == null ? '' : data[r][c]);
+        const maxWidth = colWidths[c] - 12;
+        const lines = doc.splitTextToSize(cellText, Math.max(20, maxWidth));
+        wrappedByCol.push(lines);
+        rowHeight = Math.max(rowHeight, lines.length * 12 + 8);
+      }
+
+      if (y + rowHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+
+      let cx = margin;
+      for (let c = 0; c < cols; c++) {
+        doc.setDrawColor(220);
+        doc.rect(cx, y, colWidths[c], rowHeight);
+        const lines = wrappedByCol[c];
+        let ty = y + 14;
+        lines.forEach((ln) => {
+          doc.text(String(ln), cx + 6, ty, { maxWidth: colWidths[c] - 12 });
+          ty += 12;
+        });
+        cx += colWidths[c];
+      }
+      y += rowHeight;
+    }
+
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.pdf`;
+    doc.save(filename);
+  };
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -499,6 +633,13 @@ const StudentTimetable = ({
                 </tbody>
               </table>
             </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={downloadAsPDF} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download PDF</button>
+              <button onClick={downloadAsExcel} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Excel</button>
+              <button onClick={downloadAsText} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Text</button>
+            </div>
+
           </div>
         </div>
       </main>
