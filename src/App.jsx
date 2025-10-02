@@ -1619,7 +1619,7 @@ export default function App() {
       }, { merge: true });
 
       // 4) Mark cancellation approved
-      await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now() }, { merge: true });
+      await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now(), weekStart: getWeekStartISO(Date.now()) }, { merge: true });
 
       // 5) Create student-facing notification for this class
       try {
