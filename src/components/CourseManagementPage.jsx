@@ -95,7 +95,14 @@ const CourseManagementPage = ({
         <AddCourseCard />
       </div>
 
-      {showAddCourseModal && <AddSubjectModal />}
+      {showAddCourseModal && (
+        <AddSubjectModal
+          classes={classes}
+          teachers={teachers}
+          onAddSubject={onAddSubject}
+          onClose={() => setShowAddCourseModal(false)}
+        />
+      )}
 
       <style>{`
         .course-management-page {
