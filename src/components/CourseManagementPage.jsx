@@ -25,16 +25,6 @@ const CourseManagementPage = ({
   const [semester, setSemester] = useState(1);
   const [assignedTeachers, setAssignedTeachers] = useState([]);
 
-  // Local input buffers to prevent focus loss while typing
-  const [localSubjectName, setLocalSubjectName] = useState('');
-  const [localCredits, setLocalCredits] = useState(credits);
-  const [localSemester, setLocalSemester] = useState(semester);
-
-  // Sync main -> local when main state changes (e.g., reset after submit)
-  useEffect(() => { setLocalSubjectName(subjectName || ''); }, [subjectName]);
-  useEffect(() => { setLocalCredits(Number(credits) || 0); }, [credits]);
-  useEffect(() => { setLocalSemester(Number(semester) || 1); }, [semester]);
-
   useEffect(() => {
     // Transform classes data into course sections
     const courseData = classes.map(cls => ({
