@@ -155,9 +155,8 @@ const CourseManagementPage = ({
               type="text"
               className="form-input"
               placeholder="e.g., Data Structures"
-              value={localSubjectName}
-              onChange={(e) => setLocalSubjectName(e.target.value)}
-              onBlur={() => setSubjectName(localSubjectName)}
+              value={subjectName}
+              onChange={(e) => setSubjectName(e.target.value)}
             />
           </div>
 
@@ -166,9 +165,8 @@ const CourseManagementPage = ({
             <input
               type="number"
               className="form-input"
-              value={localCredits}
-              onChange={(e) => setLocalCredits(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setCredits(Number(localCredits) || 0)}
+              value={credits}
+              onChange={(e) => setCredits(e.target.value === '' ? '' : Number(e.target.value))}
               min="1"
             />
           </div>
