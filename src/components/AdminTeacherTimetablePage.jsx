@@ -167,6 +167,19 @@ const AdminTeacherTimetablePage = ({
 
                                 {/* Day Columns */}
                                 {daysLabels.map((_, dayIdx) => {
+                                  const headerLabel = renderTimeSlots[rowIndex] || '';
+                                  const isHeaderLunch = /(\(LUNCH\))/i.test(String(headerLabel)) || /lunch/i.test(String(headerLabel));
+                                  const isHeaderBreak = /^\s*break\s*$/i.test(String(headerLabel));
+                                  if (isHeaderLunch || isHeaderBreak) {
+                                    return (
+                                      <td key={dayIdx} className="table-cell">
+                                        <div className="free-slot">
+                                          <span className="interval-badge">{isHeaderLunch ? 'Lunch' : 'Break'}</span>
+                                        </div>
+                                      </td>
+                                    );
+                                  }
+
                                   const slot = teacherTimetable?.[dayIdx]?.[rowIndex];
                                   const subj = String(slot?.subjectName || '');
                                   const isFree = !slot || slot.status === 'free' || subj === 'Free';
@@ -390,6 +403,15 @@ const AdminTeacherTimetablePage = ({
           color: #717182;
           line-height: 16px;
           text-align: center;
+        }
+        .interval-badge {
+          padding: 2px 8px;
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+          background: #2563EB;
+          color: #FFFFFF;
+          line-height: 16px;
         }
 
         .subject-slot {

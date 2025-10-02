@@ -117,6 +117,7 @@ const AdminUploadPage = ({
         <input
           type="file"
           accept={accept}
+          multiple
           onChange={handler}
           disabled={isUploading}
           className="file-input"
