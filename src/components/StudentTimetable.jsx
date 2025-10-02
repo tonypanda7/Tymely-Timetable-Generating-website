@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react';
 
+import { jsPDF } from 'jspdf';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
 const StudentTimetable = ({
   onLogout,
   onNavigate,
@@ -150,6 +154,121 @@ const StudentTimetable = ({
 
   const [collapsed, setCollapsed] = useState(false);
   const sidebarWidth = collapsed ? 72 : 220; // match Dashboard student sidebar widths
+
+  // Build export matrix (header + rows)
+  const buildExportMatrix = () => {
+    const header = ['Time', ...WEEKDAY_LABELS.slice(0, Math.min(workingDays, WEEKDAY_LABELS.length))];
+    const rows = Array.from({ length: periodCount }, (_, periodIdx) => {
+      const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
+      const cols = [timeSlot];
+      for (let dayIdx = 0; dayIdx < Math.min(workingDays, WEEKDAY_LABELS.length); dayIdx++) {
+        const cellData = getCellContent(dayIdx, periodIdx);
+        let val = 'Free';
+        if (cellData.status === 'break') val = cellData.subjectName || 'Break';
+        else if (cellData.status !== 'free') val = cellData.className ? `${cellData.subjectName} — ${cellData.className}` : `${cellData.subjectName}`;
+        cols.push(val);
+      }
+      return cols;
+    });
+    return [header, ...rows];
+  };
+
+  const downloadAsExcel = () => {
+    const data = buildExportMatrix();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    // Set column widths
+    const colWidths = data[0].map((h, i) => ({ wch: i === 0 ? 14 : 22 }));
+    ws['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.xlsx`;
+    saveAs(new Blob([out], { type: 'application/octet-stream' }), filename);
+  };
+
+  const downloadAsText = () => {
+    const data = buildExportMatrix();
+    // Tab-separated for readability
+    const lines = data.map(row => row.join('\t')).join('\n');
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.txt`;
+    saveAs(new Blob([lines], { type: 'text/plain;charset=utf-8' }), filename);
+  };
+
+  const downloadAsPDF = () => {
+    const data = buildExportMatrix();
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    const title = `${studentClass || 'Class'} — Weekly Timetable`;
+    doc.text(title, margin, margin);
+
+    // Table setup
+    const startY = margin + 20;
+    const cols = data[0].length;
+    const colWidths = Array.from({ length: cols }, (_, i) => (i === 0 ? 90 : Math.floor((pageWidth - margin * 2 - 90) / (cols - 1))));
+    const lineHeight = 16;
+
+    let y = startY;
+
+    // Header row
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    let x = margin;
+    for (let c = 0; c < cols; c++) {
+      const text = String(data[0][c] || '');
+      // header background
+      doc.setFillColor(236, 236, 240);
+      doc.rect(x, y, colWidths[c], lineHeight + 6, 'F');
+      doc.setTextColor(10, 10, 10);
+      doc.text(text, x + 6, y + lineHeight);
+      x += colWidths[c];
+    }
+    y += lineHeight + 6;
+
+    // Body rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    for (let r = 1; r < data.length; r++) {
+      // compute row height based on wrapped text
+      const wrappedByCol = [];
+      let rowHeight = lineHeight + 6;
+      for (let c = 0; c < cols; c++) {
+        const cellText = String(data[r][c] == null ? '' : data[r][c]);
+        const maxWidth = colWidths[c] - 12;
+        const lines = doc.splitTextToSize(cellText, Math.max(20, maxWidth));
+        wrappedByCol.push(lines);
+        rowHeight = Math.max(rowHeight, lines.length * 12 + 8);
+      }
+
+      if (y + rowHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+
+      let cx = margin;
+      for (let c = 0; c < cols; c++) {
+        doc.setDrawColor(220);
+        doc.rect(cx, y, colWidths[c], rowHeight);
+        const lines = wrappedByCol[c];
+        let ty = y + 14;
+        lines.forEach((ln) => {
+          doc.text(String(ln), cx + 6, ty, { maxWidth: colWidths[c] - 12 });
+          ty += 12;
+        });
+        cx += colWidths[c];
+      }
+      y += rowHeight;
+    }
+
+    const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.pdf`;
+    doc.save(filename);
+  };
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -404,14 +523,21 @@ const StudentTimetable = ({
           {/* Timetable Card */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm" style={{ maxWidth: '1042px', minHeight: '420px' }}>
             {/* Card Header */}
-            <div className="flex items-center gap-2 mb-8">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 5.83331V17.5" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2.49935 15C2.27834 15 2.06637 14.9122 1.91009 14.7559C1.75381 14.5996 1.66602 14.3877 1.66602 14.1667V3.33333C1.66602 3.11232 1.75381 2.90036 1.91009 2.74408C2.06637 2.5878 2.27834 2.5 2.49935 2.5H6.66602C7.55007 2.5 8.39792 2.85119 9.02304 3.47631C9.64816 4.10143 9.99935 4.94928 9.99935 5.83333C9.99935 4.94928 10.3505 4.10143 10.9757 3.47631C11.6008 2.85119 12.4486 2.5 13.3327 2.5H17.4993C17.7204 2.5 17.9323 2.5878 18.0886 2.74408C18.2449 2.90036 18.3327 3.11232 18.3327 3.33333V14.1667C18.3327 14.3877 18.2449 14.5996 18.0886 14.7559C17.9323 14.9122 17.7204 15 17.4993 15H12.4993C11.8363 15 11.2004 15.2634 10.7316 15.7322C10.2627 16.2011 9.99935 16.837 9.99935 17.5C9.99935 16.837 9.73596 16.2011 9.26712 15.7322C8.79828 15.2634 8.16239 15 7.49935 15H2.49935Z" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <h3 className="text-base font-normal" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#0A0A0A', lineHeight: '16px', letterSpacing: '-0.312px' }}>
-                Weekly Timetable
-              </h3>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 5.83331V17.5" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2.49935 15C2.27834 15 2.06637 14.9122 1.91009 14.7559C1.75381 14.5996 1.66602 14.3877 1.66602 14.1667V3.33333C1.66602 3.11232 1.75381 2.90036 1.91009 2.74408C2.06637 2.5878 2.27834 2.5 2.49935 2.5H6.66602C7.55007 2.5 8.39792 2.85119 9.02304 3.47631C9.64816 4.10143 9.99935 4.94928 9.99935 5.83333C9.99935 4.94928 10.3505 4.10143 10.9757 3.47631C11.6008 2.85119 12.4486 2.5 13.3327 2.5H17.4993C17.7204 2.5 17.9323 2.5878 18.0886 2.74408C18.2449 2.90036 18.3327 3.11232 18.3327 3.33333V14.1667C18.3327 14.3877 18.2449 14.5996 18.0886 14.7559C17.9323 14.9122 17.7204 15 17.4993 15H12.4993C11.8363 15 11.2004 15.2634 10.7316 15.7322C10.2627 16.2011 9.99935 16.837 9.99935 17.5C9.99935 16.837 9.73596 16.2011 9.26712 15.7322C8.79828 15.2634 8.16239 15 7.49935 15H2.49935Z" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <h3 className="text-base font-normal" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#0A0A0A', lineHeight: '16px', letterSpacing: '-0.312px' }}>
+                  Weekly Timetable
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={downloadAsPDF} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download PDF</button>
+                <button onClick={downloadAsExcel} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Excel</button>
+                <button onClick={downloadAsText} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Text</button>
+              </div>
             </div>
 
             {/* Table */}
