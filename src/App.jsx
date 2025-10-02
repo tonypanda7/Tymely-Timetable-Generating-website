@@ -1437,7 +1437,7 @@ export default function App() {
     if (role === 'teacher' && slot.status === 'confirmed' && subjectName !== 'Free') {
       try {
         const cancelRef = doc(db, "artifacts", appId, "public", "data", "cancellations", `${className}_${dayIndex}_${periodIndex}`);
-        await setDoc(cancelRef, { className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, status: 'pending', createdAt: Date.now() }, { merge: true });
+        await setDoc(cancelRef, { className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, status: 'pending', createdAt: Date.now(), weekStart: getWeekStartISO(Date.now()) }, { merge: true });
         const notifRef = doc(db, "artifacts", appId, "public", "data", "notifications", `admin_${className}_${dayIndex}_${periodIndex}`);
         await setDoc(notifRef, { type: 'teacher_cancellation_request', status: 'pending', forRole: 'admin', className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, createdAt: Date.now() }, { merge: true });
         showMessage('Cancellation request sent to admin.', 'info');
