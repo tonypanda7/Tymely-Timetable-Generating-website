@@ -1792,6 +1792,22 @@ export default function App() {
           read: false,
         });
       });
+
+      // Include any explicit student-targeted notifications from notifications collection
+      (Array.isArray(studentNotifDocs) ? studentNotifDocs : []).forEach((n) => {
+        try {
+          if (!studentClass || String(n.className) !== String(studentClass)) return;
+          const t = String(n.type || '').toLowerCase();
+          if (t === 'cancellation_for_students' || t === 'cancellation_for_students') {
+            results.push({ id: `snotif_${n.id}`, title: `Class cancelled: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)})`, timestamp: fmt(n.createdAt), read: false });
+          } else if (t === 'substitution_for_students' || t === 'substitution_for_students') {
+            const tName = (teachers.find(t2 => t2.id === n.candidateId)?.name) || n.candidateId || 'Teacher';
+            results.push({ id: `snotif_${n.id}`, title: `Substitution: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)}) will be taken by ${tName}`, timestamp: fmt(n.actedAt || n.createdAt), read: false });
+          } else if (n.title || n.message) {
+            results.push({ id: `snotif_${n.id}`, title: n.title || String(n.message || ''), timestamp: fmt(n.createdAt || n.actedAt), read: false });
+          }
+        } catch (e) {}
+      });
     } catch {}
     return results.sort((a,b)=> String(b.timestamp).localeCompare(String(a.timestamp)));
   }, [studentClass, cancellations, acceptedSubstitutions, teachers]);
