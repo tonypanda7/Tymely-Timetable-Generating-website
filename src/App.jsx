@@ -332,20 +332,11 @@ export default function App() {
       const unsubscribeTimetables = onSnapshot(timetablesCol, (snapshot) => {
         const timetableMap = {};
         let settings = null;
-        // Compute current week start once so clients only see timetables belonging to this week
-        const currentWeek = getWeekStartISO(new Date());
         snapshot.docs.forEach((d) => {
           if (d.id === 'settings') {
             settings = d.data();
           } else {
-            const data = d.data() || {};
-            const docWeek = data.weekStart;
-            // If timetable has a weekStart and it does not match current week, ignore it (weekly reset behavior)
-            if (docWeek && String(docWeek) !== String(currentWeek)) {
-              // skip old week's timetable
-              return;
-            }
-            timetableMap[d.id] = parseTimetableData(data.timetable);
+            timetableMap[d.id] = parseTimetableData(d.data().timetable);
           }
         });
 
