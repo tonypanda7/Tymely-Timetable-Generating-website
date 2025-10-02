@@ -245,20 +245,21 @@ const Dashboard = ({
     return { prevDays, currDays, nextDays, monthTitle, todayDate, monthIndex: m, year: y };
   }, [currentDate]);
 
-  // Determine day to show in Today's Timetable (default: today)
-  const dayToShow = selectedWeekDay;
-  const fullDayLabel = FULL_WEEKDAY_LABELS[dayToShow] || 'MONDAY';
+  // Determine actual Date to show (based on displayedDates[selectedWeekDay]) and weekday index (Mon-first)
+  const dateToShow = displayedDates[selectedWeekDay] || new Date();
+  const weekdayToShow = ((dateToShow.getDay() + 6) % 7);
+  const fullDayLabel = FULL_WEEKDAY_LABELS[weekdayToShow] || 'MONDAY';
 
-  // Build today's timetable row based on role
+  // Build today's timetable row based on role and weekday index
   const todayRow = useMemo(() => {
     if (role === 'teacher') {
-      return Array.isArray(teacherTimetable?.[dayToShow]) ? teacherTimetable[dayToShow] : [];
+      return Array.isArray(teacherTimetable?.[weekdayToShow]) ? teacherTimetable[weekdayToShow] : [];
     }
     if (role === 'student' && studentClass && generatedTimetables && generatedTimetables[studentClass]) {
-      return Array.isArray(generatedTimetables[studentClass]?.[dayToShow]) ? generatedTimetables[studentClass][dayToShow] : [];
+      return Array.isArray(generatedTimetables[studentClass]?.[weekdayToShow]) ? generatedTimetables[studentClass][weekdayToShow] : [];
     }
     return [];
-  }, [role, teacherTimetable, generatedTimetables, studentClass, dayToShow]);
+  }, [role, teacherTimetable, generatedTimetables, studentClass, weekdayToShow]);
 
   // Map row + slots to display items (normalize labels: Break, Free, Lunch)
   const todayScheduleItems = useMemo(() => {
