@@ -202,11 +202,13 @@ const AdminUploadPage = ({
               title="Upload Teachers CSV"
               uploadType="teachers"
               handler={handleTeacherCSV}
+              footer={<p className="upload-count">Current teachers: {teacherCount}</p>}
             />
             <UploadBox
               title="Upload Students CSV"
               uploadType="students"
               handler={handleStudentCSV}
+              footer={<p className="upload-count">Current students: {studentCount}</p>}
             />
           </div>
           
