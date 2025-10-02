@@ -1550,27 +1550,6 @@ export default function App() {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
     if (!collegeId) { showMessage('Not signed in as a teacher.', 'error'); return; }
     try {
-      // Try to read latest teacher data from Firestore to avoid stale client state
-      let left = 0;
-      try {
-        const teacherDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId));
-        if (teacherDoc.exists()) {
-          const data = teacherDoc.data() || {};
-          left = Number(data.hoursLeft ?? data.weeklyRequiredHours ?? 0);
-        } else {
-          // Fallback to in-memory teachers list
-          const me = teachers.find(t => t.id === collegeId);
-          left = Number(me?.hoursLeft ?? me?.weeklyRequiredHours ?? 0);
-        }
-      } catch (readErr) {
-        console.warn('Failed to read teacher doc for hoursLeft, falling back to client state', readErr);
-        const me = teachers.find(t => t.id === collegeId);
-        left = Number(me?.hoursLeft ?? me?.weeklyRequiredHours ?? 0);
-      }
-
-      if (!Number.isFinite(left)) left = 0;
-      if (left <= 0) { showMessage('No hours left to take substitution.', 'error'); return; }
-
       const tRef = doc(db, "artifacts", appId, "public", "data", "timetables", offer.className);
       const tDoc = await getDoc(tRef);
       if (!tDoc.exists()) { showMessage('Class timetable not found.', 'error'); return; }
@@ -1593,10 +1572,6 @@ export default function App() {
       // Reserve the slot
       table[offer.dayIndex][offer.periodIndex] = { subjectName: offer.subjectName, className: offer.className, status: 'confirmed', teacherId: collegeId };
       await setDoc(tRef, { timetable: JSON.stringify(table) });
-
-      // Decrement hoursLeft atomically by writing computed value
-      const newLeft = Math.max(0, left - 1);
-      await setDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId), { hoursLeft: newLeft }, { merge: true });
 
       // Mark notification accepted
       await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", offer.id), { status: 'accepted', actedAt: Date.now() }, { merge: true });
