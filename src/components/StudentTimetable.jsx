@@ -466,7 +466,7 @@ const StudentTimetable = ({
                             return (
                               <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
                                 <div className="flex items-center justify-center h-10">
-                                  <span className="text-xs text-center" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                     {cellData.subjectName}
                                   </span>
                                 </div>
