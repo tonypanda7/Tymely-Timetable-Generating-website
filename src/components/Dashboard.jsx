@@ -265,64 +265,40 @@ const Dashboard = ({
     const items = [];
     const row = Array.isArray(todayRow) ? todayRow : [];
     const slots = Array.isArray(computedTimeSlots) ? computedTimeSlots : [];
-    let p = 0;
+
     for (let si = 0; si < slots.length; si++) {
       const label = slots[si] || '';
-      const cell = row[p];
+      const cell = Array.isArray(row) ? row[si] : undefined;
 
-      // Header explicitly marks lunch: if row cell also represents lunch, consume it; otherwise render header
-      if (/\(LUNCH\)/i.test(label)) {
-        const start = label.split(' - ')[0] || '';
-        const end = label.split(' - ')[1]?.replace(/\(LUNCH\)/i, '').trim() || '';
-        if (cell && /lunch/i.test(String(cell.subjectName || ''))) {
-          items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
-          p++;
-        } else {
-          items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
-        }
+      // Format start/end from label if possible
+      const [startRaw, endRaw] = (String(label || '').split(' - ').map(s => s.trim()));
+      const start = startRaw || '';
+      const end = endRaw ? endRaw.replace(/\(LUNCH\)/i, '').trim() : '';
+
+      // If label explicitly marks LUNCH or cell indicates lunch, show Lunch
+      if (/\(LUNCH\)/i.test(label) || (cell && /lunch/i.test(String(cell.subjectName || '')))) {
+        items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
         continue;
       }
 
-      // Header explicitly marks Break: if row cell is break, consume; else render break header
-      if (/^\s*break\s*$/i.test(label)) {
-        const start = label.split(' - ')[0] || '';
-        const end = label.split(' - ')[1] || '';
-        if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
-          p++;
-        } else {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
-        }
+      // If label is Break or cell indicates break, show Break
+      if (/^\s*break\s*$/i.test(label) || (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || ''))))) {
+        items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
         continue;
       }
 
-      // If underlying cell is a break, show Break
-      if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#3B82F6', isBreak: true });
-        p++;
+      // If underlying cell is explicitly free
+      if (cell && (cell.status === 'free' || /free/i.test(String(cell.subjectName || '')))) {
+        items.push({ subject: 'Free', startTime: start, endTime: end, color: '#E5E7EB', isBreak: false });
         continue;
       }
 
-      // If underlying cell is lunch, show Lunch
-      if (cell && /lunch/i.test(String(cell.subjectName || ''))) {
-        items.push({ subject: 'Lunch', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#D97706', isBreak: true });
-        p++;
-        continue;
-      }
-
-      // If underlying cell is explicitly free, show Free
-      if (cell && cell.status === 'free') {
-        items.push({ subject: 'Free', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#E5E7EB', isBreak: false });
-        p++;
-        continue;
-      }
-
-      // Normal teaching slot: show subject name (if present) or Free
+      // Normal teaching slot
       const subject = cell ? (cell.subjectName || 'Free') : 'Free';
       const color = subject && subject !== 'Free' ? getColorForSubject(subject) : '#E5E7EB';
-      items.push({ subject, startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color, isBreak: false });
-      p++;
+      items.push({ subject, startTime: start, endTime: end, color, isBreak: false });
     }
+
     return items;
   }, [todayRow, computedTimeSlots]);
 
