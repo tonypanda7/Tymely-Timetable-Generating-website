@@ -944,7 +944,14 @@ AdminUploadPage.propTypes = {
   handleCoursesCSV: PropTypes.func.isRequired,
   handleFeedbackCSV: PropTypes.func.isRequired,
   isUploading: PropTypes.bool,
-  
+
+  // Counts
+  teacherCount: PropTypes.number,
+  studentCount: PropTypes.number,
+  classroomsCount: PropTypes.number,
+  coursesCount: PropTypes.number,
+  feedbackCount: PropTypes.number,
+
   // Timetable settings
   workingDays: PropTypes.number.isRequired,
   setWorkingDays: PropTypes.func.isRequired,
