@@ -2402,6 +2402,16 @@ export default function App() {
           {/* Upload Data */}
           <div className={`bg-neutral-800 p-6 rounded-2xl shadow-lg border border-neutral-700 mb-6 ${adminTab === 'upload' ? '' : 'hidden'}`}>
             <h3 className="text-lg font-semibold mb-3">Upload Data</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-neutral-300">Quick Settings</div>
+              <div className="flex items-center gap-3">
+                <label className="text-sm">Bypass hoursLeft:</label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={bypassHoursCheck} onChange={e => updateBypassSetting(Boolean(e.target.checked))} className="w-4 h-4" />
+                  <span className="text-xs text-neutral-300">Allow accepting substitutions regardless of hoursLeft</span>
+                </label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Upload Teachers CSV</label>
