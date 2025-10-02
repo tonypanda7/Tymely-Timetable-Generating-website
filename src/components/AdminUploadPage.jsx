@@ -9,7 +9,11 @@ const AdminUploadPage = ({
   handleCoursesCSV,
   handleFeedbackCSV,
   isUploading,
-  
+
+  // Counts
+  teacherCount = 0,
+  studentCount = 0,
+
   // Timetable settings
   workingDays,
   setWorkingDays,
