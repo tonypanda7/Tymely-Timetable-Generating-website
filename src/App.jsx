@@ -2259,6 +2259,10 @@ export default function App() {
               handleFeedbackCSV={handleFeedbackCSV}
               isUploading={isUploading}
 
+              // Counts
+              teacherCount={teachers.length}
+              studentCount={classes.reduce((sum, cls) => sum + (Array.isArray(cls.students) ? cls.students.length : 0), 0)}
+
               // Timetable settings
               workingDays={workingDays}
               setWorkingDays={setWorkingDays}
