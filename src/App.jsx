@@ -94,6 +94,18 @@ function parseTimetableData(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+// Compute ISO date (YYYY-MM-DD) for the Monday of the week containing the provided date
+function getWeekStartISO(dt) {
+  const d = new Date(dt);
+  // Convert so that Monday is start of week
+  const day = d.getDay(); // 0 (Sun) .. 6 (Sat)
+  const isoDay = (day + 6) % 7; // 0 (Mon) .. 6 (Sun)
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - isoDay);
+  monday.setHours(0,0,0,0);
+  return monday.toISOString().split('T')[0];
+}
+
 // Normalize IDs/names for robust comparisons (trim + lowercase)
 function normalizeId(val) {
   return String(val || '').trim().toLowerCase();
@@ -320,11 +332,20 @@ export default function App() {
       const unsubscribeTimetables = onSnapshot(timetablesCol, (snapshot) => {
         const timetableMap = {};
         let settings = null;
+        // Compute current week start once so clients only see timetables belonging to this week
+        const currentWeek = getWeekStartISO(new Date());
         snapshot.docs.forEach((d) => {
           if (d.id === 'settings') {
             settings = d.data();
           } else {
-            timetableMap[d.id] = parseTimetableData(d.data().timetable);
+            const data = d.data() || {};
+            const docWeek = data.weekStart;
+            // If timetable has a weekStart and it does not match current week, ignore it (weekly reset behavior)
+            if (docWeek && String(docWeek) !== String(currentWeek)) {
+              // skip old week's timetable
+              return;
+            }
+            timetableMap[d.id] = parseTimetableData(data.timetable);
           }
         });
 
@@ -1301,9 +1322,11 @@ export default function App() {
         workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage
       }, { merge: true });
 
+      // Tag timetables with the week start (ISO YYYY-MM-DD for Monday) so they are valid only for that week
+      const currentWeekISO = getWeekStartISO(new Date());
       for (const clsName in newTimetables) {
         const timetableRef = doc(db, "artifacts", appId, "public", "data", "timetables", clsName);
-        await setDoc(timetableRef, { timetable: JSON.stringify(newTimetables[clsName]) });
+        await setDoc(timetableRef, { timetable: JSON.stringify(newTimetables[clsName]), weekStart: currentWeekISO });
       }
 
       for (const t of teachers) {
