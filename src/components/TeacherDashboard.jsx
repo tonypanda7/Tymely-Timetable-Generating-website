@@ -136,6 +136,28 @@ const TeacherDashboard = ({
     };
   }, [teacherTimetable, workingDays, hoursPerDay, currentTeacher, timeSlots, slotDescriptors]);
 
+  const teacherClassCompletion = useMemo(() => {
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    const available = completed + Math.max(0, Number(teacherStats.freeHours || 0));
+    const total = available;
+    const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    return { completed, total, percent };
+  }, [teacherStats.totalClasses, teacherStats.freeHours]);
+
+  const plannedClassTarget = useMemo(() => {
+    const required = Number(teacherStats.requiredHours || 0);
+    if (required > 0) return required;
+    if (teacherClassCompletion.total > 0) return teacherClassCompletion.total;
+    return 13;
+  }, [teacherStats.requiredHours, teacherClassCompletion.total]);
+
+  const plannedClassPercent = useMemo(() => {
+    const target = plannedClassTarget;
+    if (target <= 0) return 0;
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    return Math.min(100, Math.round((completed / target) * 100));
+  }, [plannedClassTarget, teacherStats.totalClasses]);
+
   // Calendar helpers
   const calendarData = useMemo(() => {
     const now = currentDate;
