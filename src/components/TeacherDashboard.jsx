@@ -569,20 +569,18 @@ const TeacherDashboard = ({
                 <div className="grid grid-cols-7 gap-1">
                   {calendarData.prevDays.map((dnum) => {
                     const dt = new Date(calendarData.year, calendarData.monthIndex - 1, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                     return (
-                      <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{dnum}</div>
+                      <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400'} py-2 hover:bg-gray-50 rounded cursor-pointer`}>{isSelected ? (<span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span>) : dnum}</div>
                     );
                   })}
                   {calendarData.currDays.map((dnum) => {
                     const dt = new Date(calendarData.year, calendarData.monthIndex, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                     return (
-                      <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-black py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors">
-                        {dnum === calendarData.todayDate ? (
-                          <div className="w-6 h-6 mx-auto">
-                            <div className="w-6 h-6 border border-red-500 rounded-full flex items-center justify-center">
-                              <span className="text-sm">{dnum}</span>
-                            </div>
-                          </div>
+                      <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? '' : 'text-black hover:bg-blue-50'} py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors`}>
+                        {isSelected ? (
+                          <div className="w-6 h-6 mx-auto"><span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span></div>
                         ) : (
                           dnum
                         )}
@@ -591,8 +589,9 @@ const TeacherDashboard = ({
                   })}
                   {calendarData.nextDays.map((dnum) => {
                     const dt = new Date(calendarData.year, calendarData.monthIndex + 1, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                     return (
-                      <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{dnum}</div>
+                      <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400'} py-2 hover:bg-gray-50 rounded cursor-pointer`}>{isSelected ? (<span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span>) : dnum}</div>
                     );
                   })}
                 </div>
