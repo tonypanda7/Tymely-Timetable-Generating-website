@@ -261,17 +261,17 @@ const Dashboard = ({
         const start = label.split(' - ')[0] || '';
         const end = label.split(' - ')[1] || '';
         if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#374151', isBreak: true });
+          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
           p++;
         } else {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#374151', isBreak: true });
+          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
         }
         continue;
       }
 
       // If underlying cell is a break, show Break
       if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#374151', isBreak: true });
+        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#3B82F6', isBreak: true });
         p++;
         continue;
       }
