@@ -649,72 +649,71 @@ export default function App() {
   };
 
   const handleTeacherCSV = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) { showMessage("No file selected.", "error"); return; }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) { showMessage("No file selected.", "error"); return; }
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const data = evt.target?.result;
-        if (!data) throw new Error("File data is empty.");
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet);
 
-        const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
+    const readFile = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = evt.target?.result;
+          if (!data) throw new Error("File data is empty.");
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet);
+          resolve(json);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = reject;
+      reader.readAsBinaryString(file);
+    });
 
-        const newTeachers = json.map((row) => {
-          const id = String(get(row, ['TeacherID', 'ID', 'Id', 'teacher id']));
-          const name = get(row, ['Name', 'TeacherName', 'FullName']) ? String(get(row, ['Name', 'TeacherName', 'FullName'])) : '';
-          const hours = Number(get(row, ['WorkingHours', 'NumberOfWorkingHours', 'Hours', 'working hours']));
-          if (!id || !Number.isFinite(hours)) {
-            throw new Error(`Missing required fields (TeacherID, WorkingHours) in row: ${JSON.stringify(row)}`);
-          }
-          const pref1 = get(row, ['FirstPreference', 'First Preference', 'Expertise', 'Specialization']);
-          const pref2 = get(row, ['SecondPreference', 'Second Preference']);
-          return {
-            id: id,
-            name: name,
-            weeklyRequiredHours: hours,
-            hoursLeft: hours,
-            skipsUsed: 0,
-            expertise: pref1 ? String(pref1) : '',
-            preferences: [pref1 ? String(pref1) : '', pref2 ? String(pref2) : ''].filter(Boolean),
-          };
+    try {
+      const allRowsArrays = await Promise.all(files.map(readFile));
+      const rows = allRowsArrays.flat();
+
+      const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
+
+      const uniqueById = new Map();
+      rows.forEach((row) => {
+        const id = String(get(row, ['TeacherID', 'ID', 'Id', 'teacher id']));
+        const name = get(row, ['Name', 'TeacherName', 'FullName']) ? String(get(row, ['Name', 'TeacherName', 'FullName'])) : '';
+        const hours = Number(get(row, ['WorkingHours', 'NumberOfWorkingHours', 'Hours', 'working hours']));
+        if (!id || !Number.isFinite(hours)) return;
+        const pref1 = get(row, ['FirstPreference', 'First Preference', 'Expertise', 'Specialization']);
+        const pref2 = get(row, ['SecondPreference', 'Second Preference']);
+        uniqueById.set(id, {
+          id,
+          name,
+          weeklyRequiredHours: hours,
+          hoursLeft: hours,
+          skipsUsed: 0,
+          expertise: pref1 ? String(pref1) : '',
+          preferences: [pref1 ? String(pref1) : '', pref2 ? String(pref2) : ''].filter(Boolean),
         });
+      });
 
-        const teachersPublicRef = collection(db, "artifacts", appId, "public", "data", "teachers");
-        // Upload new/updated teachers
-        const uploadPromises = newTeachers.map((teacher) => {
-          const teacherDocRef = doc(teachersPublicRef, teacher.id);
-          return setDoc(teacherDocRef, teacher, { merge: true });
-        });
-        await Promise.all(uploadPromises);
+      const teachersPublicRef = collection(db, 'artifacts', appId, 'public', 'data', 'teachers');
+      const uploads = [];
+      uniqueById.forEach((teacher) => {
+        uploads.push(setDoc(doc(teachersPublicRef, teacher.id), teacher, { merge: true }));
+      });
+      await Promise.all(uploads);
 
-        // Delete teachers not present in this upload
-        const existingTeachersSnap = await getDocs(teachersPublicRef);
-        const latestTeacherIds = new Set(newTeachers.map(t => String(t.id)));
-        const deletions = [];
-        existingTeachersSnap.forEach((d) => {
-          if (!latestTeacherIds.has(d.id)) {
-            deletions.push(deleteDoc(doc(teachersPublicRef, d.id)));
-          }
-        });
-        if (deletions.length) await Promise.all(deletions);
-
-        setTeachers(newTeachers);
-        showMessage("Teachers uploaded successfully!", "success");
-      } catch (error) {
-        console.error("Error uploading teachers:", error);
-        showMessage(`Failed to upload teachers. Check the console for details: ${error.message}`, "error");
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    reader.readAsBinaryString(file);
+      // Refresh local state with full merged dataset
+      const snap = await getDocs(teachersPublicRef);
+      setTeachers(snap.docs.map(d => d.data()));
+      showMessage('Teachers uploaded successfully!', 'success');
+    } catch (error) {
+      console.error('Error uploading teachers:', error);
+      showMessage(`Failed to upload teachers. Check the console for details: ${error.message}`, 'error');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleStudentCSV = async (e) => {
