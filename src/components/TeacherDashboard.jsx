@@ -494,7 +494,7 @@ const TeacherDashboard = ({
                     <div>
                       <div className="text-sm text-gray-500">Free Hours</div>
                       <div className="text-2xl font-medium text-black">{teacherStats.freeHours}</div>
-                      <div className="text-xs text-gray-500">Break time</div>
+                      <div className="text-xs" style={{ color: '#3B82F6' }}>Break time</div>
                     </div>
                     <svg width="33" height="32" viewBox="0 0 33 32" fill="none">
                       <path d="M13.584 2.66663V5.33329" stroke="#F54900" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
