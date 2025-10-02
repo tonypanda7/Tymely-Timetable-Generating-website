@@ -94,6 +94,11 @@ function parseTimetableData(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+// Normalize IDs/names for robust comparisons (trim + lowercase)
+function normalizeId(val) {
+  return String(val || '').trim().toLowerCase();
+}
+
 const WEEKDAY_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const getWeekdayLabel = (idx) => {
   const i = Number.isFinite(Number(idx)) ? Number(idx) : 0;
