@@ -425,7 +425,7 @@ const TeacherDashboard = ({
                         Classes Completed
                       </span>
                       <span className="text-2xl font-medium text-[#0A0A0A] leading-8 tracking-[0.07px]" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
-                        {teacherStats.totalClasses}/{teacherStats.requiredHours || 13}
+                        {teacherStats.totalClasses}/{plannedClassTarget}
                       </span>
                     </div>
                   </div>
@@ -435,7 +435,7 @@ const TeacherDashboard = ({
                     <div
                       className="bg-[#030213] h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${Math.min(100, (teacherStats.totalClasses / (teacherStats.requiredHours || 13)) * 100)}%`
+                        width: `${plannedClassPercent}%`
                       }}
                     ></div>
                   </div>
