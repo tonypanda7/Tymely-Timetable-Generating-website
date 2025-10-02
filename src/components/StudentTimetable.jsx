@@ -395,7 +395,7 @@ const StudentTimetable = ({
                   <path d="M8.25 2.66669V5.33335" stroke="#F54900" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <div className="text-xs font-normal mt-2" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182', lineHeight: '16px' }}>
+              <div className="text-xs font-normal mt-2" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#3B82F6', lineHeight: '16px' }}>
                 Break time
               </div>
             </div>
