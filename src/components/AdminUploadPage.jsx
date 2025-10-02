@@ -82,11 +82,12 @@ const AdminUploadPage = ({
     return value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
   };
 
-  const UploadBox = ({ 
-    title, 
-    uploadType, 
-    handler, 
-    accept = ".csv,.xlsx,.xls" 
+  const UploadBox = ({
+    title,
+    uploadType,
+    handler,
+    accept = ".csv,.xlsx,.xls",
+    footer = null
   }) => (
     <div className="upload-box-container">
       <label className="upload-box-label">{title}</label>
