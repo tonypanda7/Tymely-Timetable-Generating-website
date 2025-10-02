@@ -183,12 +183,39 @@ const Dashboard = ({
     return { totalClassesThisWeek: total, freePeriodsThisWeek: free };
   }, [role, teacherTimetable, generatedTimetables, studentClass, workingDays, hoursPerDay]);
 
-  // Initialize selected weekday to today's weekday (Mon=0,...,Sun=6)
+  // Initialize selected weekday to center of display (so current date aligns)
+  const DISPLAY_DAYS = 5;
+  const DISPLAY_CENTER = Math.floor(DISPLAY_DAYS / 2);
+
   useEffect(() => {
-    const todayIdx = ((new Date().getDay() + 6) % 7);
-    setSelectedWeekDay(todayIdx);
+    setSelectedWeekDay(DISPLAY_CENTER);
     setCurrentDate(new Date());
   }, []);
+
+  // Compute array of dates to show in week selector centered on current date
+  const displayedDates = useMemo(() => {
+    const base = new Date(currentDate || new Date());
+    return Array.from({ length: DISPLAY_DAYS }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + (i - DISPLAY_CENTER));
+      return d;
+    });
+  }, [currentDate]);
+
+  // Whether selected day has no classes (used instead of weekend-only logic)
+  const isSelectedDayNoClasses = useMemo(() => {
+    const sel = displayedDates[selectedWeekDay];
+    if (!sel) return true;
+    const weekdayIdx = ((sel.getDay() + 6) % 7);
+    // Get row for that weekday
+    let row = [];
+    if (role === 'teacher') row = Array.isArray(teacherTimetable?.[weekdayIdx]) ? teacherTimetable[weekdayIdx] : [];
+    else if (role === 'student' && studentClass && generatedTimetables && Array.isArray(generatedTimetables[studentClass])) row = Array.isArray(generatedTimetables[studentClass]?.[weekdayIdx]) ? generatedTimetables[studentClass][weekdayIdx] : [];
+    if (!row || !row.length) return true;
+    // If all slots are break/free/lunch, treat as no classes
+    const hasTeaching = row.some(slot => slot && slot.status !== 'break' && slot.status !== 'free' && !/lunch/i.test(String(slot.subjectName || '')));
+    return !hasTeaching;
+  }, [displayedDates, selectedWeekDay, role, teacherTimetable, generatedTimetables, studentClass]);
 
   const isTodayWeekend = useMemo(() => {
     const d = new Date().getDay();
