@@ -981,6 +981,13 @@ export default function App() {
         showMessage('Fill each elective: name and at least one teacher.', 'error');
         return;
       }
+      if (hasCourseCatalog) {
+        const invalid = details.find(d => !isCatalogElective(d.name));
+        if (invalid) {
+          showMessage(`Elective "${invalid.name}" is not marked as Elective for this class (program/semester) in the catalog.`, 'error');
+          return;
+        }
+      }
       const group = {
         name: `${selectedClass} Electives (Sem ${semNum})`,
         credits: Number(newSubjectCredits),
