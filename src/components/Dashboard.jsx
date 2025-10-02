@@ -42,7 +42,6 @@ const Dashboard = ({
   const WEEKDAY_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
   const FULL_WEEKDAY_LABELS = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
   const weekDays = WEEKDAY_LABELS.slice(0, workingDays);
-  const weekNumbers = [10, 11, 12, 13, 14];
   const getWeekdayLabel = (idx) => WEEKDAY_LABELS[((Number(idx) % 7) + 7) % 7];
 
   // Helpers for color assignment and contrast detection
