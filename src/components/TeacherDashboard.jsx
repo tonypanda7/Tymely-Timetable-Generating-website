@@ -570,11 +570,11 @@ const TeacherDashboard = ({
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-sm text-gray-500">Classes Completed</div>
-                      <div className="text-2xl font-medium text-black">7/13</div>
+                      <div className="text-2xl font-medium text-black">{teacherClassCompletion.completed}/{teacherClassCompletion.total}</div>
                     </div>
                   </div>
                   <div className="mt-2 bg-gray-200 rounded-full h-2">
-                    <div className="bg-black h-2 rounded-full" style={{ width: '54%' }}></div>
+                    <div className="bg-black h-2 rounded-full" style={{ width: `${teacherClassCompletion.percent}%` }}></div>
                   </div>
                 </div>
               </div>
