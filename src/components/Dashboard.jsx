@@ -1037,8 +1037,8 @@ const Dashboard = ({
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm font-medium text-black font-josefin-sans">{fullDayLabel}</span>
                   </div>
-                  {isTodayWeekend ? (
-                    <div className="text-center text-black font-poppins py-8">today is a holiday</div>
+                  {isSelectedDayNoClasses ? (
+                    <div className="text-center text-black font-poppins py-8">No classes on this day</div>
                   ) : (
                     <div className="space-y-2">
                       {todayScheduleItems.map((slot, index) => (
