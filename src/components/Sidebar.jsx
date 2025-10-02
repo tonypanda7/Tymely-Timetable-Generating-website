@@ -99,10 +99,33 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
         </svg>
       ),
       visible: role === 'admin'
+    },
+    {
+      id: 'logout',
+      label: 'Logout',
+      icon: (
+        <svg width="29" height="29" viewBox="0 0 24 24" fill="none">
+          <path d="M16 17L21 12L16 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M21 12H9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      visible: role === 'admin',
+      action: 'logout'
     }
   ];
 
   const visibleMenuItems = menuItems.filter(item => item.visible);
+
+  const handleItemClick = (item) => {
+    if (item.action === 'logout') {
+      if (typeof onLogout === 'function') {
+        onLogout();
+      }
+      return;
+    }
+    onNavigate(item.id);
+  };
 
   return (
     <aside className={`sidebar ${variant === 'light' ? 'light' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
@@ -118,8 +141,9 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
         {visibleMenuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`nav-item ${currentView === item.id ? 'active' : ''}`}
+            onClick={() => handleItemClick(item)}
+            className={`nav-item ${(item.action !== 'logout' && currentView === item.id) ? 'active' : ''}`}
+            aria-label={item.action === 'logout' ? 'Logout' : item.label.replace('\n', ' ')}
           >
             <div className="nav-icon">
               {item.icon}
@@ -135,19 +159,6 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           </button>
         ))}
       </nav>
-
-      {role === 'admin' && typeof onLogout === 'function' && (
-        <button onClick={onLogout} className="nav-item" aria-label="Logout">
-          <div className="nav-icon">
-            <svg width="29" height="29" viewBox="0 0 24 24" fill="none">
-              <path d="M16 17L21 12L16 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M21 12H9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span className="nav-label">Logout</span>
-        </button>
-      )}
 
       {/* Admin Profile */}
       <div className="admin-profile">
@@ -174,8 +185,9 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           flex-direction: column;
           padding: 2rem 0;
           z-index: 100;
+          overflow: hidden;
         }
-        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; }
+        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; overflow-x: hidden; }
 
         .sidebar.light { background: #FFF; border-right: 1px solid rgba(0,0,0,0.1); }
         .sidebar.light .nav-item { color: #0A0A0A; }
@@ -211,7 +223,8 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           gap: 1rem;
           padding: 0 1rem;
         }
-        .sidebar.collapsed .nav-menu { align-items: center; padding: 0; }
+        .sidebar:not(.collapsed) .nav-menu { overflow-y: auto; }
+        .sidebar.collapsed .nav-menu { align-items: center; padding: 0; overflow-y: hidden; }
 
         .nav-item {
           display: flex;
@@ -228,6 +241,10 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           width: 100%;
         }
         .sidebar.collapsed .nav-item { justify-content: center; gap: 0; padding: 0.5rem 0; width: 72px; }
+        .sidebar.collapsed .nav-item:hover,
+        .sidebar.collapsed .nav-item.active {
+          transform: none;
+        }
 
         .nav-item:hover {
           background: rgba(255, 255, 255, 0.1);

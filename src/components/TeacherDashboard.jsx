@@ -136,6 +136,28 @@ const TeacherDashboard = ({
     };
   }, [teacherTimetable, workingDays, hoursPerDay, currentTeacher, timeSlots, slotDescriptors]);
 
+  const teacherClassCompletion = useMemo(() => {
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    const available = completed + Math.max(0, Number(teacherStats.freeHours || 0));
+    const total = available;
+    const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    return { completed, total, percent };
+  }, [teacherStats.totalClasses, teacherStats.freeHours]);
+
+  const plannedClassTarget = useMemo(() => {
+    const required = Number(teacherStats.requiredHours || 0);
+    if (required > 0) return required;
+    if (teacherClassCompletion.total > 0) return teacherClassCompletion.total;
+    return 13;
+  }, [teacherStats.requiredHours, teacherClassCompletion.total]);
+
+  const plannedClassPercent = useMemo(() => {
+    const target = plannedClassTarget;
+    if (target <= 0) return 0;
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    return Math.min(100, Math.round((completed / target) * 100));
+  }, [plannedClassTarget, teacherStats.totalClasses]);
+
   // Calendar helpers
   const calendarData = useMemo(() => {
     const now = currentDate;
@@ -403,7 +425,7 @@ const TeacherDashboard = ({
                         Classes Completed
                       </span>
                       <span className="text-2xl font-medium text-[#0A0A0A] leading-8 tracking-[0.07px]" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
-                        {teacherStats.totalClasses}/{teacherStats.requiredHours || 13}
+                        {teacherStats.totalClasses}/{plannedClassTarget}
                       </span>
                     </div>
                   </div>
@@ -413,7 +435,7 @@ const TeacherDashboard = ({
                     <div
                       className="bg-[#030213] h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${Math.min(100, (teacherStats.totalClasses / (teacherStats.requiredHours || 13)) * 100)}%`
+                        width: `${plannedClassPercent}%`
                       }}
                     ></div>
                   </div>
@@ -548,11 +570,11 @@ const TeacherDashboard = ({
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-sm text-gray-500">Classes Completed</div>
-                      <div className="text-2xl font-medium text-black">7/13</div>
+                      <div className="text-2xl font-medium text-black">{teacherClassCompletion.completed}/{teacherClassCompletion.total}</div>
                     </div>
                   </div>
                   <div className="mt-2 bg-gray-200 rounded-full h-2">
-                    <div className="bg-black h-2 rounded-full" style={{ width: '54%' }}></div>
+                    <div className="bg-black h-2 rounded-full" style={{ width: `${teacherClassCompletion.percent}%` }}></div>
                   </div>
                 </div>
               </div>

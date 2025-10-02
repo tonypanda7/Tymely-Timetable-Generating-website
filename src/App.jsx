@@ -260,16 +260,15 @@ export default function App() {
 
     setIsLibrariesLoaded(true);
 
-    if (!auth) return;
+    if (!auth) {
+      console.warn('Firebase auth not initialized. Skipping authentication.');
+      showMessage('Firebase not configured. Running in offline/demo mode.', 'info');
+      setIsAuthReady(true);
+      return;
+    }
 
     const authenticate = async () => {
       try {
-        if (!auth) {
-          console.warn('Firebase auth not initialized. Skipping authentication.');
-          showMessage('Firebase not configured. Running in offline/demo mode.', 'info');
-          setIsAuthReady(true);
-          return;
-        }
         if (typeof window !== 'undefined' && window.__initial_auth_token) {
           await signInWithCustomToken(auth, window.__initial_auth_token);
         } else {
@@ -283,14 +282,10 @@ export default function App() {
     authenticate();
 
     let unsubscribe = () => {};
-    if (auth) {
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) setUserId(user.uid);
-        setIsAuthReady(true);
-      });
-    } else {
+    unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) setUserId(user.uid);
       setIsAuthReady(true);
-    }
+    });
     return () => { try { unsubscribe(); } catch {} };
   }, [auth]);
 
