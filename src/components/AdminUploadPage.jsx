@@ -119,6 +119,7 @@ const AdminUploadPage = ({
           className="file-input"
         />
       </div>
+      {footer && <div className="upload-footer">{footer}</div>}
     </div>
   );
 
