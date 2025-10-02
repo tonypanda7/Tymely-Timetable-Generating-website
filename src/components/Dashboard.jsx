@@ -76,10 +76,29 @@ const Dashboard = ({
     return SUBJECT_COLOR_PALETTE[idx];
   };
 
-  const computedTimeSlots = (Array.isArray(timeSlots) && timeSlots.length) ? timeSlots : [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '1:00 PM', '2:00 PM', '3:00 PM'
+  const defaultTimeSlotsForStudentView = [
+    '9:00-10:00',
+    '10:00-11:00',
+    '11:00-12:00',
+    '12:00-1:00',
+    '1:00-2:00',
+    '2:00-3:00'
   ];
+
+  const periodCount = useMemo(() => {
+    if (Array.isArray(timeSlots) && timeSlots.length) return timeSlots.length;
+    if (Number.isFinite(Number(hoursPerDay))) return Number(hoursPerDay);
+    try {
+      const table = (generatedTimetables && studentClass && Array.isArray(generatedTimetables[studentClass])) ? generatedTimetables[studentClass] : [];
+      if (Array.isArray(table) && table.length) return table.reduce((m, day) => Math.max(m, Array.isArray(day) ? day.length : 0), 0);
+    } catch (e) { /* ignore */ }
+    return defaultTimeSlotsForStudentView.length;
+  }, [timeSlots, hoursPerDay, generatedTimetables, studentClass]);
+
+  const computedTimeSlots = useMemo(() => {
+    if (Array.isArray(timeSlots) && timeSlots.length) return timeSlots.slice(0, periodCount);
+    return defaultTimeSlotsForStudentView.slice(0, periodCount);
+  }, [timeSlots, periodCount]);
 
   // Compute enrolled courses for the current student (mandatory + chosen electives)
   const enrolledCourses = useMemo(() => {
@@ -265,66 +284,57 @@ const Dashboard = ({
     const items = [];
     const row = Array.isArray(todayRow) ? todayRow : [];
     const slots = Array.isArray(computedTimeSlots) ? computedTimeSlots : [];
-    let p = 0;
     for (let si = 0; si < slots.length; si++) {
       const label = slots[si] || '';
-      const cell = row[p];
+      const cell = row[si];
 
-      // Header explicitly marks lunch: if row cell also represents lunch, consume it; otherwise render header
-      if (/\(LUNCH\)/i.test(label)) {
-        const start = label.split(' - ')[0] || '';
-        const end = label.split(' - ')[1]?.replace(/\(LUNCH\)/i, '').trim() || '';
-        if (cell && /lunch/i.test(String(cell.subjectName || ''))) {
-          items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
-          p++;
+      const parts = String(label || '').split(/\s*-\s*/);
+      const start = parts[0] || '';
+      const end = parts[1] || '';
+
+      // If no underlying cell, treat as Free
+      if (!cell) {
+        items.push({ subject: 'Free', startTime: start, endTime: end, color: '#E5E7EB', isBreak: false });
+        continue;
+      }
+
+      const subj = String(cell.subjectName || '');
+
+      // Break / Lunch / Free handling
+      if (cell.status === 'break' || /break/i.test(subj) || /^\s*break\s*$/i.test(label)) {
+        items.push({ subject: /lunch/i.test(subj) || /lunch/i.test(label) ? 'Lunch' : 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
+        continue;
+      }
+
+      if (/lunch/i.test(subj) || /lunch/i.test(label)) {
+        items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
+        continue;
+      }
+
+      if (cell.status === 'free' || /^\s*free\s*$/i.test(subj)) {
+        items.push({ subject: 'Free', startTime: start, endTime: end, color: '#E5E7EB', isBreak: false });
+        continue;
+      }
+
+      // Elective handling
+      if (cell.status === 'elective') {
+        const selections = selectedElectivesMap || {};
+        const allSelected = Object.values(selections).flatMap(v => Array.isArray(v) ? v : (v ? [v] : []));
+        if (allSelected.length > 0) {
+          const electiveNames = allSelected.map(name => `${name} (elective)`).join(', ');
+          items.push({ subject: electiveNames, startTime: start, endTime: end, color: '#DCFCE7', isBreak: false });
         } else {
-          items.push({ subject: 'Lunch', startTime: start, endTime: end, color: '#D97706', isBreak: true });
+          items.push({ subject: 'Elective (Not Selected)', startTime: start, endTime: end, color: '#FEF3C7', isBreak: false });
         }
         continue;
       }
 
-      // Header explicitly marks Break: if row cell is break, consume; else render break header
-      if (/^\s*break\s*$/i.test(label)) {
-        const start = label.split(' - ')[0] || '';
-        const end = label.split(' - ')[1] || '';
-        if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
-          p++;
-        } else {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
-        }
-        continue;
-      }
-
-      // If underlying cell is a break, show Break
-      if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#3B82F6', isBreak: true });
-        p++;
-        continue;
-      }
-
-      // If underlying cell is lunch, show Lunch
-      if (cell && /lunch/i.test(String(cell.subjectName || ''))) {
-        items.push({ subject: 'Lunch', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#D97706', isBreak: true });
-        p++;
-        continue;
-      }
-
-      // If underlying cell is explicitly free, show Free
-      if (cell && cell.status === 'free') {
-        items.push({ subject: 'Free', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#E5E7EB', isBreak: false });
-        p++;
-        continue;
-      }
-
-      // Normal teaching slot: show subject name (if present) or Free
-      const subject = cell ? (cell.subjectName || 'Free') : 'Free';
-      const color = subject && subject !== 'Free' ? getColorForSubject(subject) : '#E5E7EB';
-      items.push({ subject, startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color, isBreak: false });
-      p++;
+      // Normal teaching slot
+      const color = subj && subj !== 'Free' ? getColorForSubject(subj) : '#E5E7EB';
+      items.push({ subject: subj || 'Free', startTime: start, endTime: end, color, isBreak: false });
     }
     return items;
-  }, [todayRow, computedTimeSlots]);
+  }, [todayRow, computedTimeSlots, selectedElectivesMap]);
 
   if (currentView === 'notification') {
     if (role === 'teacher') {
