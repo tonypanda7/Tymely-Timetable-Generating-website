@@ -1199,6 +1199,20 @@ export default function App() {
     }
   };
 
+  const updateBypassSetting = async (value) => {
+    // Persist bypassHoursCheck immediately when toggled from top admin header
+    setBypassHoursCheck(Boolean(value));
+    if (!db) { showMessage('Database not ready. Toggle will persist after DB connects.', 'warning'); return; }
+    try {
+      const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
+      await setDoc(settingsRef, { bypassHoursCheck: Boolean(value) }, { merge: true });
+      showMessage('Bypass setting saved.', 'success');
+    } catch (e) {
+      console.error('Failed to update bypass setting', e);
+      showMessage('Failed to save bypass setting.', 'error');
+    }
+  };
+
   const generateTimetable = async () => {
     if (isGeneratingRef.current) return;
     isGeneratingRef.current = true;
