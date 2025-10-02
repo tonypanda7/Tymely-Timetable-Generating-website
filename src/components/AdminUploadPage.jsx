@@ -557,6 +557,16 @@ const AdminUploadPage = ({
           line-height: 1.5;
         }
 
+        .upload-filename {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          color: #0F172A;
+          opacity: 0.8;
+          text-align: center;
+          margin-top: 0.5rem;
+          word-break: break-all;
+        }
+
         .file-input {
           position: absolute;
           inset: 0;
