@@ -16,15 +16,6 @@ const CourseManagementPage = ({
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
-  // Form state
-  const [selectedClass, setSelectedClass] = useState('');
-  const [subjectName, setSubjectName] = useState('');
-  const [credits, setCredits] = useState(3);
-  const [courseType, setCourseType] = useState('major');
-  const [subjectType, setSubjectType] = useState('theory');
-  const [courseStyle, setCourseStyle] = useState('hard_theory');
-  const [semester, setSemester] = useState(1);
-  const [assignedTeachers, setAssignedTeachers] = useState([]);
 
   useEffect(() => {
     // Transform classes data into course sections
