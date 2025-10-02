@@ -1313,11 +1313,9 @@ export default function App() {
         workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage
       }, { merge: true });
 
-      // Tag timetables with the week start (ISO YYYY-MM-DD for Monday) so they are valid only for that week
-      const currentWeekISO = getWeekStartISO(new Date());
       for (const clsName in newTimetables) {
         const timetableRef = doc(db, "artifacts", appId, "public", "data", "timetables", clsName);
-        await setDoc(timetableRef, { timetable: JSON.stringify(newTimetables[clsName]), weekStart: currentWeekISO });
+        await setDoc(timetableRef, { timetable: JSON.stringify(newTimetables[clsName]) });
       }
 
       for (const t of teachers) {
