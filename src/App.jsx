@@ -94,6 +94,11 @@ function parseTimetableData(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+// Normalize IDs/names for robust comparisons (trim + lowercase)
+function normalizeId(val) {
+  return String(val || '').trim().toLowerCase();
+}
+
 const WEEKDAY_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const getWeekdayLabel = (idx) => {
   const i = Number.isFinite(Number(idx)) ? Number(idx) : 0;
@@ -136,6 +141,25 @@ export default function App() {
   const [dayEndTime, setDayEndTime] = useState("17:00");
   const [timetableSettings, setTimetableSettings] = useState(null);
   const [electiveSlots, setElectiveSlots] = useState([]);
+
+  // Demo: allow auto-login via URL query `as=admin_ID` or `as=admin_ID` or `as=admin:ID` for screenshots
+  const autoLoginAppliedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoginAppliedRef.current) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const as = params.get('as') || params.get('autoLogin') || '';
+      if (!as) return;
+      const parts = as.replace(':', '_').split('_');
+      if (parts.length === 2 && parts[0].toLowerCase() === 'admin') {
+        const id = parts[1];
+        setCollegeId(id);
+        setRole('admin');
+        autoLoginAppliedRef.current = true;
+        console.info('Auto-login as admin:', id);
+      }
+    } catch (e) {}
+  }, []);
 
   const [generatedTimetables, setGeneratedTimetables] = useState({});
   const [simulationScenarios, setSimulationScenarios] = useState({});
@@ -193,6 +217,9 @@ export default function App() {
   // Hours left
   const [weeklyHoursLeft, setWeeklyHoursLeft] = useState(0);
   const [monthlyHoursLeft, setMonthlyHoursLeft] = useState(0);
+
+  // Admin toggle: bypass hoursLeft check for substitution acceptance
+  const [bypassHoursCheck, setBypassHoursCheck] = useState(false);
 
   // UI state
   const [message, setMessage] = useState({ text: "", type: "info" });
@@ -311,6 +338,7 @@ export default function App() {
           setDayStartTime(settings.dayStartTime ?? settings.classStartTime ?? "09:00");
           setDayEndTime(settings.dayEndTime ?? "17:00");
           setFreePeriodPercentage(settings.freePeriodPercentage ?? 20);
+          setBypassHoursCheck(Boolean(settings.bypassHoursCheck));
         }
         setGeneratedTimetables(timetableMap);
       }, onErr('timetables'));
@@ -360,7 +388,7 @@ export default function App() {
       const notificationsCol = collection(db, "artifacts", appId, "public", "data", "notifications");
       const unsubscribeNotifications = onSnapshot(notificationsCol, (snapshot) => {
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setTeacherOffers(items.filter(n => n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending'));
+        setTeacherOffers(items.filter(n => (n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending') || (n.type === 'cancellation_approved' && n.candidateId === collegeId)));
         setAcceptedSubstitutions(items.filter(n => n.type === 'substitution_offer' && n.status === 'accepted'));
       }, onErr('notifications'));
 
@@ -1180,12 +1208,27 @@ export default function App() {
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
       await setDoc(settingsRef, {
-        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage
+        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage,
+        bypassHoursCheck: Boolean(bypassHoursCheck)
       }, { merge: true });
       showMessage("Settings saved.", "success");
     } catch (e) {
       console.error(e);
       showMessage("Failed to save settings.", "error");
+    }
+  };
+
+  const updateBypassSetting = async (value) => {
+    // Persist bypassHoursCheck immediately when toggled from top admin header
+    setBypassHoursCheck(Boolean(value));
+    if (!db) { showMessage('Database not ready. Toggle will persist after DB connects.', 'warning'); return; }
+    try {
+      const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
+      await setDoc(settingsRef, { bypassHoursCheck: Boolean(value) }, { merge: true });
+      showMessage('Bypass setting saved.', 'success');
+    } catch (e) {
+      console.error('Failed to update bypass setting', e);
+      showMessage('Failed to save bypass setting.', 'error');
     }
   };
 
@@ -1480,22 +1523,29 @@ export default function App() {
       const requesterId = normalizeTeacherId(c.teacherId);
       const candidates = normalized.filter(tid => tid && tid !== requesterId);
 
-      // 3) Send substitution offers to available candidates (not busy at that slot)
+      // 3) Send substitution offers to available candidates (check latest DB timetables for availability)
       const offersRefBase = collection(db, "artifacts", appId, "public", "data", "notifications");
+      // Read latest timetables from Firestore to ensure availability checks are correct
+      const timetablesRef = collection(db, "artifacts", appId, "public", "data", "timetables");
+      const ttSnap = await getDocs(timetablesRef);
+      const ttDocs = ttSnap.docs.map(d => ({ id: d.id, table: parseTimetableData(d.data().timetable) }));
+
       const offerOps = candidates.map(async (tid) => {
         let busy = false;
-        for (const clsName of Object.keys(generatedTimetables)) {
-          const tt = generatedTimetables[clsName];
-          const slot2 = tt?.[c.dayIndex]?.[c.periodIndex];
-          if (slot2 && slot2.status !== 'free' && slot2.status !== 'break' && slot2.teacherId === tid) { busy = true; break; }
+        for (const td of ttDocs) {
+          const slot2 = td.table?.[c.dayIndex]?.[c.periodIndex];
+          if (slot2 && slot2.status !== 'free' && slot2.status !== 'break' && normalizeId(slot2.teacherId) === normalizeId(tid)) { busy = true; break; }
         }
         if (!busy) {
           const nid = `offer_${c.className}_${c.dayIndex}_${c.periodIndex}_${tid}`;
+          const requesterName = (teachers.find(t => t.id === requesterId) || {}).name || '';
           await setDoc(doc(offersRefBase, nid), {
             type: 'substitution_offer',
             status: 'pending',
             forRole: 'teacher',
             candidateId: tid,
+            requesterId,
+            requesterName,
             className: c.className,
             dayIndex: Number(c.dayIndex),
             periodIndex: Number(c.periodIndex),
@@ -1505,6 +1555,19 @@ export default function App() {
         }
       });
       await Promise.all(offerOps);
+
+      // Notify requester (approval)
+      await setDoc(doc(offersRefBase, `approval_${c.className}_${c.dayIndex}_${c.periodIndex}_${requesterId}`), {
+        type: 'cancellation_approved',
+        status: 'approved',
+        forRole: 'teacher',
+        candidateId: requesterId,
+        className: c.className,
+        dayIndex: Number(c.dayIndex),
+        periodIndex: Number(c.periodIndex),
+        subjectName: c.subjectName,
+        createdAt: Date.now()
+      }, { merge: true });
 
       // 4) Mark cancellation approved
       await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now() }, { merge: true });
@@ -1523,22 +1586,59 @@ export default function App() {
 
   const acceptOffer = async (offer) => {
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
+    if (!collegeId) { showMessage('Not signed in as a teacher.', 'error'); return; }
     try {
-      const me = teachers.find(t => t.id === collegeId);
-      const left = Number(me?.hoursLeft || 0);
-      if (left <= 0) { showMessage('No hours left to take substitution.', 'error'); return; }
+      // If bypass is not enabled, check teacher hoursLeft
+      if (!bypassHoursCheck) {
+        try {
+          const teacherDoc = await getDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId));
+          const data = teacherDoc.exists() ? (teacherDoc.data() || {}) : (teachers.find(t => t.id === collegeId) || {});
+          const left = Number(data.hoursLeft ?? data.weeklyRequiredHours ?? 0);
+          if (!Number.isFinite(left) || left <= 0) { showMessage('No hours left to take substitution.', 'error'); return; }
+        } catch (readErr) {
+          console.warn('Could not verify hoursLeft, aborting accept to be safe.', readErr);
+          showMessage('Unable to verify hours left. Try again later.', 'error');
+          return;
+        }
+      }
 
       const tRef = doc(db, "artifacts", appId, "public", "data", "timetables", offer.className);
       const tDoc = await getDoc(tRef);
-      if (!tDoc.exists()) return;
+      if (!tDoc.exists()) { showMessage('Class timetable not found.', 'error'); return; }
       const table = parseTimetableData(tDoc.data().timetable);
       const currentSlot = table?.[offer.dayIndex]?.[offer.periodIndex];
-      if (!currentSlot || currentSlot.subjectName !== 'Free') { showMessage('Slot no longer available.', 'error'); return; }
+      if (!currentSlot || String(currentSlot.subjectName || '').toLowerCase() !== 'free') { showMessage('Slot no longer available.', 'error'); return; }
 
+      // Ensure teacher (candidate) is not assigned elsewhere at this slot by checking latest timetables
+      const timetablesRef2 = collection(db, "artifacts", appId, "public", "data", "timetables");
+      const ttSnap2 = await getDocs(timetablesRef2);
+      for (const ddoc of ttSnap2.docs) {
+        const otherTable = parseTimetableData(ddoc.data().timetable);
+        const s = otherTable?.[offer.dayIndex]?.[offer.periodIndex];
+        if (s && s.status !== 'free' && s.status !== 'break' && normalizeId(s.teacherId) === normalizeId(collegeId)) {
+          showMessage('You are busy at that time slot and cannot accept substitution.', 'error');
+          return;
+        }
+      }
+
+      // Reserve the slot
       table[offer.dayIndex][offer.periodIndex] = { subjectName: offer.subjectName, className: offer.className, status: 'confirmed', teacherId: collegeId };
       await setDoc(tRef, { timetable: JSON.stringify(table) });
 
-      await setDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId), { hoursLeft: Math.max(0, left - 1) }, { merge: true });
+      // If bypass disabled, decrement hoursLeft by 1
+      if (!bypassHoursCheck) {
+        try {
+          const teacherDoc2 = await getDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId));
+          const data2 = teacherDoc2.exists() ? (teacherDoc2.data() || {}) : (teachers.find(t => t.id === collegeId) || {});
+          const leftNow = Number(data2.hoursLeft ?? data2.weeklyRequiredHours ?? 0);
+          const newLeft = Math.max(0, leftNow - 1);
+          await setDoc(doc(db, "artifacts", appId, "public", "data", "teachers", collegeId), { hoursLeft: newLeft }, { merge: true });
+        } catch (err) {
+          console.warn('Failed to decrement hoursLeft, continuing nonetheless.', err);
+        }
+      }
+
+      // Mark notification accepted
       await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", offer.id), { status: 'accepted', actedAt: Date.now() }, { merge: true });
       showMessage('Substitution accepted.', 'success');
     } catch (e) {
@@ -2267,7 +2367,16 @@ export default function App() {
         <div className="w-full max-w-4xl">
           <h1 className="text-3xl font-bold mb-6 text-center">Admin Dashboard</h1>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Time and Class Configuration</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold">Time and Class Configuration</h2>
+              <div className="flex items-center gap-3">
+                <label className="text-sm">Bypass hoursLeft:</label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={bypassHoursCheck} onChange={e => updateBypassSetting(Boolean(e.target.checked))} className="w-4 h-4" />
+                  <span className="text-xs">Allow accepting substitutions regardless of hoursLeft</span>
+                </label>
+              </div>
+            </div>
             <div className="flex gap-3">
               <button
                 className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
@@ -2312,6 +2421,16 @@ export default function App() {
           {/* Upload Data */}
           <div className={`bg-neutral-800 p-6 rounded-2xl shadow-lg border border-neutral-700 mb-6 ${adminTab === 'upload' ? '' : 'hidden'}`}>
             <h3 className="text-lg font-semibold mb-3">Upload Data</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-neutral-300">Quick Settings</div>
+              <div className="flex items-center gap-3">
+                <label className="text-sm">Bypass hoursLeft:</label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={bypassHoursCheck} onChange={e => updateBypassSetting(Boolean(e.target.checked))} className="w-4 h-4" />
+                  <span className="text-xs text-neutral-300">Allow accepting substitutions regardless of hoursLeft</span>
+                </label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Upload Teachers CSV</label>
@@ -2703,15 +2822,22 @@ export default function App() {
                   <div key={`timeslot-${i}`} className="text-xs px-3 py-1 rounded-full bg-neutral-700 text-neutral-200">{s}</div>
                 ))}
               </div>
-              <div className="flex gap-3">
-                <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700" onClick={saveSettings}>Save Settings</button>
-                <button
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${isGenerateEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-neutral-600 cursor-not-allowed'}`}
-                  onClick={generateTimetable}
-                  disabled={!isGenerateEnabled || isGeneratingRef.current}
-                >
-                  {isGeneratingRef.current ? 'Generating...' : 'Generate Timetable'}
-                </button>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={bypassHoursCheck} onChange={e => updateBypassSetting(Boolean(e.target.checked))} className="w-4 h-4" />
+                  <span className="text-sm text-neutral-300">Bypass hoursLeft for substitutions</span>
+                </label>
+
+                <div className="ml-auto flex gap-3">
+                  <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700" onClick={saveSettings}>Save Settings</button>
+                  <button
+                    className={`px-4 py-2 rounded-lg font-semibold transition-colors ${isGenerateEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-neutral-600 cursor-not-allowed'}`}
+                    onClick={generateTimetable}
+                    disabled={!isGenerateEnabled || isGeneratingRef.current}
+                  >
+                    {isGeneratingRef.current ? 'Generating...' : 'Generate Timetable'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

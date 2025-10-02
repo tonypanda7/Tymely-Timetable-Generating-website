@@ -78,12 +78,22 @@ const TeacherNotifications = ({
     const items = Array.isArray(teacherOffers) ? teacherOffers : [];
     return items
       .map((offer, index) => {
+        const type = String(offer.type || '');
         const classLabel = String(offer.className || 'Class');
         const subject = String(offer.subjectName || 'Subject');
         const dayLabel = getWeekdayLabel(offer.dayIndex);
         const periodLabel = getPeriodLabel(offer.periodIndex);
         const requesterName = String(offer.requesterName || offer.teacherName || '').trim();
         const statusMeta = getStatusMeta(offer.status);
+        if (type === 'cancellation_approved') {
+          return {
+            id: offer.id || `received-${index}`,
+            title: 'Cancellation request approved',
+            description: `Your request to cancel ${subject} for ${classLabel} on ${dayLabel} (${periodLabel}) was approved.`,
+            statusMeta,
+            createdAt: Number(offer.createdAt) || 0,
+          };
+        }
         return {
           id: offer.id || `received-${index}`,
           title: requesterName ? `Class switch requested by ${requesterName}` : 'Class switch request',
