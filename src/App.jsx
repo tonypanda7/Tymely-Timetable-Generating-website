@@ -1337,19 +1337,30 @@ export default function App() {
     }
 
     // New validations: subjects without credits (no periods) and too many subjects vs available slots
-    const slotsPerDay = Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0) - (Array.isArray(electiveSlots) ? electiveSlots.length : 0));
-    const teachingSlotsPerWeek = Math.max(0, Number(workingDays || 0) * slotsPerDay);
+    const hasElectiveForClass = (c) => {
+      try {
+        const subs = Array.isArray(c.subjects) ? c.subjects : [];
+        if (subs.some(s => s && s.courseType === 'elective')) return true;
+        const program = String(c.program || '');
+        const sem = Number(c.semester ?? c.sem ?? 0);
+        if (!program || !sem) return false;
+        return Object.values(courses || {}).some(x => String(x.program || '') === program && Number(x.semester || 0) === sem && /elective/i.test(String(x.category || '')));
+      } catch { return false; }
+    };
 
     for (const cls of classes) {
       const subjList = Array.isArray(cls.subjects) ? cls.subjects : [];
       const noPeriodSubjects = subjList.filter(s => !s || Number(s.credits || 0) <= 0).map(s => s && s.name ? s.name : 'Unnamed');
       if (noPeriodSubjects.length > 0) {
-        showMessage(`Class ${cls.name}: the respective course has no periods -> ${noPeriodSubjects.join(', ')}`, 'error');
+        showMessage(`Class ${cls.name}: the respective course has no periods -> ${noPeriodSubjects.join(', ')}` , 'error');
         isGeneratingRef.current = false;
         return;
       }
-      if (subjList.length > teachingSlotsPerWeek) {
-        showMessage(`Class ${cls.name} has too many subjects (${subjList.length}) for available periods (${teachingSlotsPerWeek}).`, 'error');
+      const classSlotsPerDay = Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0) - (hasElectiveForClass(cls) ? (Array.isArray(electiveSlots) ? electiveSlots.length : 0) : 0));
+      const classTeachingSlotsPerWeek = Math.max(0, Number(workingDays || 0) * classSlotsPerDay);
+      const nonElectiveSubjects = subjList.filter(s => !(s && s.courseType === 'elective'));
+      if (nonElectiveSubjects.length > classTeachingSlotsPerWeek) {
+        showMessage(`Class ${cls.name} has too many subjects (${nonElectiveSubjects.length}) for available periods (${classTeachingSlotsPerWeek}).`, 'error');
         isGeneratingRef.current = false;
         return;
       }
