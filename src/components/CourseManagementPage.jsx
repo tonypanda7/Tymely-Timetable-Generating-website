@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+import AddSubjectModal from './AddSubjectModal.jsx';
 
 const CourseManagementPage = ({
   classes = [],
@@ -15,25 +16,6 @@ const CourseManagementPage = ({
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
-  // Form state
-  const [selectedClass, setSelectedClass] = useState('');
-  const [subjectName, setSubjectName] = useState('');
-  const [credits, setCredits] = useState(3);
-  const [courseType, setCourseType] = useState('major');
-  const [subjectType, setSubjectType] = useState('theory');
-  const [courseStyle, setCourseStyle] = useState('hard_theory');
-  const [semester, setSemester] = useState(1);
-  const [assignedTeachers, setAssignedTeachers] = useState([]);
-
-  // Local input buffers to prevent focus loss while typing
-  const [localSubjectName, setLocalSubjectName] = useState('');
-  const [localCredits, setLocalCredits] = useState(credits);
-  const [localSemester, setLocalSemester] = useState(semester);
-
-  // Sync main -> local when main state changes (e.g., reset after submit)
-  useEffect(() => { setLocalSubjectName(subjectName || ''); }, [subjectName]);
-  useEffect(() => { setLocalCredits(Number(credits) || 0); }, [credits]);
-  useEffect(() => { setLocalSemester(Number(semester) || 1); }, [semester]);
 
   useEffect(() => {
     // Transform classes data into course sections
@@ -89,197 +71,7 @@ const CourseManagementPage = ({
     </div>
   );
 
-  const handleAddSubject = async () => {
-    if (!selectedClass || !subjectName || credits <= 0 || assignedTeachers.length === 0) {
-      alert('Please fill all required fields');
-      return;
-    }
-
-    const subjectData = {
-      name: subjectName,
-      credits,
-      courseType,
-      isLab: subjectType === 'lab',
-      delivery: subjectType,
-      style: courseStyle,
-      sem: semester,
-      teachers: assignedTeachers
-    };
-
-    if (onAddSubject) {
-      await onAddSubject(selectedClass, subjectData);
-      // Reset form
-      setSubjectName('');
-      setCredits(3);
-      setCourseType('major');
-      setSubjectType('theory');
-      setCourseStyle('hard_theory');
-      setSemester(1);
-      setAssignedTeachers([]);
-      // Reset local buffers as well
-      setLocalSubjectName('');
-      setLocalCredits(3);
-      setLocalSemester(1);
-      setShowAddCourseModal(false);
-    }
-  };
-
-  const selectedClassData = classes.find(cls => cls.name === selectedClass);
-
-  const AddSubjectModal = () => (
-    <div className="modal-overlay" onClick={() => setShowAddCourseModal(false)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-form">
-          <h2 className="modal-title">Add Subject to Course</h2>
-
-          <div className="form-group">
-            <label className="form-label">Select Class</label>
-            <select
-              className="form-input"
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-            >
-              <option value="">-- Select a Class --</option>
-              {classes.map((cls) => (
-                <option key={cls.name} value={cls.name}>{cls.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Course Type</label>
-            <select
-              className="form-input"
-              value={courseType}
-              onChange={(e) => setCourseType(e.target.value)}
-            >
-              <option value="major">Major</option>
-              <option value="skill_based">Skill Based</option>
-              <option value="elective">Elective</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Subject Name</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g., Data Structures"
-              value={localSubjectName}
-              onChange={(e) => setLocalSubjectName(e.target.value)}
-              onBlur={() => setSubjectName(localSubjectName)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Credits</label>
-            <input
-              type="number"
-              className="form-input"
-              value={localCredits}
-              onChange={(e) => setLocalCredits(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setCredits(Number(localCredits) || 0)}
-              min="1"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Type</label>
-            <select
-              className="form-input"
-              value={subjectType}
-              onChange={(e) => setSubjectType(e.target.value)}
-            >
-              <option value="theory">Theory</option>
-              <option value="lab">Lab</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Course Style</label>
-            <select
-              className="form-input"
-              value={courseStyle}
-              onChange={(e) => setCourseStyle(e.target.value)}
-            >
-              <option value="hard_theory">Hard Theory</option>
-              <option value="hands_on">Hands On</option>
-              <option value="light">Light</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Semester (1-8)</label>
-            <input
-              type="number"
-              className="form-input"
-              value={localSemester}
-              onChange={(e) => setLocalSemester(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setSemester(Number(localSemester) || 1)}
-              min="1"
-              max="8"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Assign Teachers</label>
-            <select
-              multiple
-              className="form-input form-select-multiple"
-              value={assignedTeachers}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => option.value);
-                setAssignedTeachers(selected);
-              }}
-            >
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name} ({teacher.id})
-                </option>
-              ))}
-            </select>
-            <p className="form-helper">Hold Ctrl/Cmd to select multiple teachers</p>
-          </div>
-
-          <button className="btn-add-subject" onClick={handleAddSubject}>
-            Add Subject
-          </button>
-        </div>
-
-        <div className="modal-preview">
-          <div className="preview-card">
-            <div className="preview-header">
-              <h3 className="preview-title">{selectedClass || 'Select a Class'}</h3>
-            </div>
-
-            <div className="preview-subjects">
-              {selectedClassData?.subjects?.map((subject, index) => (
-                <div key={index} className="preview-subject">
-                  <span className="preview-subject-name">
-                    {subject.name} ({subject.credits || 3} credits)
-                  </span>
-                  <button
-                    className="preview-delete-btn"
-                    onClick={() => handleDeleteClick(selectedClass, subject.name, index)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )) || (
-                <div className="preview-empty">
-                  {selectedClass ? 'No subjects added yet' : 'Select a class to view subjects'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button className="btn-add-course" onClick={() => setShowAddCourseModal(false)}>
-            Add Course
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // Render AddSubjectModal as isolated component to avoid parent re-render issues
 
   return (
     <div className="course-management-page">
@@ -294,7 +86,14 @@ const CourseManagementPage = ({
         <AddCourseCard />
       </div>
 
-      {showAddCourseModal && <AddSubjectModal />}
+      {showAddCourseModal && (
+        <AddSubjectModal
+          classes={classes}
+          teachers={teachers}
+          onAddSubject={onAddSubject}
+          onClose={() => setShowAddCourseModal(false)}
+        />
+      )}
 
       <style>{`
         .course-management-page {

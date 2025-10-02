@@ -418,13 +418,13 @@ const TeacherSchedulePage = ({
                   >
                     {teacherStats.freePeriods}
                   </div>
-                  <div 
-                    className="text-[#717182]"
-                    style={{ 
+                  <div
+                    style={{
                       fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif',
                       fontSize: '12px',
                       fontWeight: 400,
-                      lineHeight: '16px'
+                      lineHeight: '16px',
+                      color: '#3B82F6'
                     }}
                   >
                     Break time

@@ -42,7 +42,6 @@ const Dashboard = ({
   const WEEKDAY_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
   const FULL_WEEKDAY_LABELS = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
   const weekDays = WEEKDAY_LABELS.slice(0, workingDays);
-  const weekNumbers = [10, 11, 12, 13, 14];
   const getWeekdayLabel = (idx) => WEEKDAY_LABELS[((Number(idx) % 7) + 7) % 7];
 
   // Helpers for color assignment and contrast detection
@@ -183,12 +182,39 @@ const Dashboard = ({
     return { totalClassesThisWeek: total, freePeriodsThisWeek: free };
   }, [role, teacherTimetable, generatedTimetables, studentClass, workingDays, hoursPerDay]);
 
-  // Initialize selected weekday to today's weekday (Mon=0,...,Sun=6)
+  // Initialize selected weekday to center of display (so current date aligns)
+  const DISPLAY_DAYS = 5;
+  const DISPLAY_CENTER = Math.floor(DISPLAY_DAYS / 2);
+
   useEffect(() => {
-    const todayIdx = ((new Date().getDay() + 6) % 7);
-    setSelectedWeekDay(todayIdx);
+    setSelectedWeekDay(DISPLAY_CENTER);
     setCurrentDate(new Date());
   }, []);
+
+  // Compute array of dates to show in week selector centered on current date
+  const displayedDates = useMemo(() => {
+    const base = new Date(currentDate || new Date());
+    return Array.from({ length: DISPLAY_DAYS }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + (i - DISPLAY_CENTER));
+      return d;
+    });
+  }, [currentDate]);
+
+  // Whether selected day has no classes (used instead of weekend-only logic)
+  const isSelectedDayNoClasses = useMemo(() => {
+    const sel = displayedDates[selectedWeekDay];
+    if (!sel) return true;
+    const weekdayIdx = ((sel.getDay() + 6) % 7);
+    // Get row for that weekday
+    let row = [];
+    if (role === 'teacher') row = Array.isArray(teacherTimetable?.[weekdayIdx]) ? teacherTimetable[weekdayIdx] : [];
+    else if (role === 'student' && studentClass && generatedTimetables && Array.isArray(generatedTimetables[studentClass])) row = Array.isArray(generatedTimetables[studentClass]?.[weekdayIdx]) ? generatedTimetables[studentClass][weekdayIdx] : [];
+    if (!row || !row.length) return true;
+    // If all slots are break/free/lunch, treat as no classes
+    const hasTeaching = row.some(slot => slot && slot.status !== 'break' && slot.status !== 'free' && !/lunch/i.test(String(slot.subjectName || '')));
+    return !hasTeaching;
+  }, [displayedDates, selectedWeekDay, role, teacherTimetable, generatedTimetables, studentClass]);
 
   const isTodayWeekend = useMemo(() => {
     const d = new Date().getDay();
@@ -218,20 +244,21 @@ const Dashboard = ({
     return { prevDays, currDays, nextDays, monthTitle, todayDate, monthIndex: m, year: y };
   }, [currentDate]);
 
-  // Determine day to show in Today's Timetable (default: today)
-  const dayToShow = selectedWeekDay;
-  const fullDayLabel = FULL_WEEKDAY_LABELS[dayToShow] || 'MONDAY';
+  // Determine actual Date to show (based on displayedDates[selectedWeekDay]) and weekday index (Mon-first)
+  const dateToShow = displayedDates[selectedWeekDay] || new Date();
+  const weekdayToShow = ((dateToShow.getDay() + 6) % 7);
+  const fullDayLabel = FULL_WEEKDAY_LABELS[weekdayToShow] || 'MONDAY';
 
-  // Build today's timetable row based on role
+  // Build today's timetable row based on role and weekday index
   const todayRow = useMemo(() => {
     if (role === 'teacher') {
-      return Array.isArray(teacherTimetable?.[dayToShow]) ? teacherTimetable[dayToShow] : [];
+      return Array.isArray(teacherTimetable?.[weekdayToShow]) ? teacherTimetable[weekdayToShow] : [];
     }
     if (role === 'student' && studentClass && generatedTimetables && generatedTimetables[studentClass]) {
-      return Array.isArray(generatedTimetables[studentClass]?.[dayToShow]) ? generatedTimetables[studentClass][dayToShow] : [];
+      return Array.isArray(generatedTimetables[studentClass]?.[weekdayToShow]) ? generatedTimetables[studentClass][weekdayToShow] : [];
     }
     return [];
-  }, [role, teacherTimetable, generatedTimetables, studentClass, dayToShow]);
+  }, [role, teacherTimetable, generatedTimetables, studentClass, weekdayToShow]);
 
   // Map row + slots to display items (normalize labels: Break, Free, Lunch)
   const todayScheduleItems = useMemo(() => {
@@ -261,17 +288,17 @@ const Dashboard = ({
         const start = label.split(' - ')[0] || '';
         const end = label.split(' - ')[1] || '';
         if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#374151', isBreak: true });
+          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
           p++;
         } else {
-          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#374151', isBreak: true });
+          items.push({ subject: 'Break', startTime: start, endTime: end, color: '#3B82F6', isBreak: true });
         }
         continue;
       }
 
       // If underlying cell is a break, show Break
       if (cell && (cell.status === 'break' || /break/i.test(String(cell.subjectName || '')))) {
-        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#374151', isBreak: true });
+        items.push({ subject: 'Break', startTime: label.split(' - ')[0] || '', endTime: label.split(' - ')[1] || '', color: '#3B82F6', isBreak: true });
         p++;
         continue;
       }
@@ -893,18 +920,20 @@ const Dashboard = ({
             {role !== 'student' && (
             /* Week selector */
             <div className="flex gap-2 mb-8">
-              {weekDays.map((day, index) => (
-                <button
-                  key={day}
-                  onClick={() => setSelectedWeekDay(index)}
-                  className={`flex flex-col items-center justify-center w-20 h-14 rounded-lg transition-all duration-200 hover:scale-105 font-poppins ${
-                    index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
-                >
-                  <span className="text-sm font-semibold text-black">{weekNumbers[index]}</span>
-                  <span className="text-sm font-medium text-black uppercase">{day}</span>
-                </button>
-              ))}
+              {displayedDates.map((dt, index) => {
+                const dayLabel = dt.toLocaleString('default', { weekday: 'short' });
+                const dateNum = dt.getDate();
+                return (
+                  <button
+                    key={`d-${dt.toISOString()}`}
+                    onClick={() => setSelectedWeekDay(index)}
+                    className={`flex flex-col items-center justify-center w-20 h-14 rounded-lg transition-all duration-200 hover:scale-105 font-poppins ${index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'}`}
+                  >
+                    <span className="text-sm font-semibold text-black">{dateNum}</span>
+                    <span className="text-sm font-medium text-black uppercase">{dayLabel}</span>
+                  </button>
+                );
+              })}
             </div>
             )}
             
@@ -952,25 +981,37 @@ const Dashboard = ({
               
               {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
-                {calendarData.prevDays.map((date) => (
-                  <div key={`prev-${date}`} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-gray-400 hover:bg-gray-50 rounded cursor-pointer font-poppins`}>
-                    {date}
-                  </div>
-                ))}
-                {calendarData.currDays.map((date) => (
-                  <div key={`curr-${date}`} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-black hover:bg-blue-50 rounded cursor-pointer transition-colors font-poppins`}>
-                    {date === calendarData.todayDate ? (
-                      <span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{date}</span>
-                    ) : (
-                      date
-                    )}
-                  </div>
-                ))}
-                {calendarData.nextDays.map((date) => (
-                  <div key={`next-${date}`} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-gray-400 hover:bg-gray-50 rounded cursor-pointer font-poppins`}>
-                    {date}
-                  </div>
-                ))}
+                {calendarData.prevDays.map((dnum) => {
+                  const dt = new Date(calendarData.year, calendarData.monthIndex - 1, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                  return (
+                    <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400 hover:bg-gray-50 rounded cursor-pointer'} font-poppins`}>
+                      {isSelected ? (<span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>) : dnum}
+                    </div>
+                  );
+                })}
+                {calendarData.currDays.map((dnum) => {
+                  const dt = new Date(calendarData.year, calendarData.monthIndex, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                  return (
+                    <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? '' : 'text-black hover:bg-blue-50'} rounded cursor-pointer transition-colors font-poppins`}>
+                      {isSelected ? (
+                        <span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>
+                      ) : (
+                        dnum
+                      )}
+                    </div>
+                  );
+                })}
+                {calendarData.nextDays.map((dnum) => {
+                  const dt = new Date(calendarData.year, calendarData.monthIndex + 1, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                  return (
+                    <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400 hover:bg-gray-50 rounded cursor-pointer'} font-poppins`}>
+                      {isSelected ? (<span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>) : dnum}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -985,18 +1026,20 @@ const Dashboard = ({
               
               {/* Week navigation */}
               <div className="flex gap-2 mb-6">
-                {weekDays.map((day, index) => (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedWeekDay(index)}
-                    className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 font-poppins ${
-                      index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
-                    <span className="text-sm font-semibold text-black">{weekNumbers[index]}</span>
-                    <span className="text-xs font-medium text-black uppercase">{day}</span>
-                  </button>
-                ))}
+                {displayedDates.map((dt, index) => {
+                  const dayLabel = dt.toLocaleString('default', { weekday: 'short' });
+                  const dateNum = dt.getDate();
+                  return (
+                    <button
+                      key={`d2-${dt.toISOString()}`}
+                      onClick={() => setSelectedWeekDay(index)}
+                      className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 font-poppins ${index === selectedWeekDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                      <span className="text-sm font-semibold text-black">{dateNum}</span>
+                      <span className="text-xs font-medium text-black uppercase">{dayLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Timetable widget */}
@@ -1005,8 +1048,8 @@ const Dashboard = ({
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm font-medium text-black font-josefin-sans">{fullDayLabel}</span>
                   </div>
-                  {isTodayWeekend ? (
-                    <div className="text-center text-black font-poppins py-8">today is a holiday</div>
+                  {isSelectedDayNoClasses ? (
+                    <div className="text-center text-black font-poppins py-8">No classes on this day</div>
                   ) : (
                     <div className="space-y-2">
                       {todayScheduleItems.map((slot, index) => (

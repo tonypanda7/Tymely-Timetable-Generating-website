@@ -21,7 +21,9 @@ const TeacherDashboard = ({
   teachers = [],
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState(0); // Today's day for timetable
+  const DISPLAY_DAYS = 5;
+  const DISPLAY_CENTER = Math.floor(DISPLAY_DAYS / 2);
+  const [selectedDay, setSelectedDay] = useState(DISPLAY_CENTER); // index in displayedDates
 
   const slotDescriptors = useMemo(() => {
     if (!Array.isArray(timeSlots)) return [];
@@ -277,12 +279,34 @@ const TeacherDashboard = ({
     return base;
   }, [teacherTimetable, generatedTimetables, collegeId, workingDays, hoursPerDay, slotDescriptors, breakOrLunchIndices]);
 
-  // Initialize selected day to today
+  // Initialize selected day to center (today will be centered)
   useEffect(() => {
-    const todayIdx = ((new Date().getDay() + 6) % 7); // Monday = 0
-    setSelectedDay(Math.min(todayIdx, workingDays - 1));
+    setSelectedDay(DISPLAY_CENTER);
     setCurrentDate(new Date());
   }, [workingDays]);
+
+  // Compute displayedDates centered on currentDate
+  const displayedDates = useMemo(() => {
+    const base = new Date(currentDate || new Date());
+    return Array.from({ length: DISPLAY_DAYS }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + (i - DISPLAY_CENTER));
+      return d;
+    });
+  }, [currentDate]);
+
+  const selectedWeekdayIndex = useMemo(() => {
+    const dt = displayedDates[selectedDay] || new Date();
+    return ((dt.getDay() + 6) % 7);
+  }, [displayedDates, selectedDay]);
+
+  const isSelectedDayNoClasses = useMemo(() => {
+    const weekdayIdx = selectedWeekdayIndex;
+    const row = Array.isArray(teacherTimetable?.[weekdayIdx]) ? teacherTimetable[weekdayIdx] : [];
+    if (!row || !row.length) return true;
+    const hasTeaching = row.some(slot => slot && slot.status !== 'break' && slot.status !== 'free' && !/lunch/i.test(String(slot.subjectName || '')));
+    return !hasTeaching;
+  }, [teacherTimetable, selectedWeekdayIndex]);
 
   // Generate circular progress SVG
   const CircularProgress = ({ progress, size = 73, strokeWidth = 8 }) => {
@@ -397,29 +421,33 @@ const TeacherDashboard = ({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {Array.from({ length: Math.min(workingDays, 6) }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedDay(i)}
-                    className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 ${
-                      i === selectedDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
-                    <span className="text-sm font-medium text-black">{10 + i}</span>
-                    <span className="text-sm font-medium text-black uppercase">{getWeekdayLabel(i)}</span>
-                  </button>
-                ))}
+                {displayedDates.map((dt, i) => {
+                  const dayLabel = dt.toLocaleString('default', { weekday: 'short' });
+                  const dateNum = dt.getDate();
+                  return (
+                    <button
+                      key={`td-${dt.toISOString()}`}
+                      onClick={() => setSelectedDay(i)}
+                      className={`flex flex-col items-center justify-center w-16 h-12 rounded-lg transition-all duration-200 ${i === selectedDay ? 'bg-blue-200 bg-opacity-60 shadow-md' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                      <span className="text-sm font-medium text-black">{dateNum}</span>
+                      <span className="text-sm font-medium text-black uppercase">{dayLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col">
                 <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-lg font-medium text-black">Timetable for {getWeekdayLabel(selectedDay)}</h3>
+                  <h3 className="text-lg font-medium text-black">Timetable for {getWeekdayLabel(selectedWeekdayIndex)}</h3>
                   <p className="text-sm text-gray-500">Your schedule for the day</p>
                 </div>
                 <div className="p-4 flex-1">
                   <div className="space-y-3">
-                    {Array.from({ length: Math.min(hoursPerDay, (computedTeacherTimetable[selectedDay] || []).length || hoursPerDay) }, (_, periodIdx) => {
-                      const slot = computedTeacherTimetable[selectedDay]?.[periodIdx];
+                    {isSelectedDayNoClasses ? (
+                      <div className="text-center text-black py-6">No classes on this day</div>
+                    ) : Array.from({ length: Math.min(hoursPerDay, (computedTeacherTimetable[selectedWeekdayIndex] || []).length || hoursPerDay) }, (_, periodIdx) => {
+                      const slot = computedTeacherTimetable[selectedWeekdayIndex]?.[periodIdx];
                       const descriptor = slotDescriptors[periodIdx];
                       const label =
                         descriptor?.originalLabel ||
@@ -494,7 +522,7 @@ const TeacherDashboard = ({
                     <div>
                       <div className="text-sm text-gray-500">Free Hours</div>
                       <div className="text-2xl font-medium text-black">{teacherStats.freeHours}</div>
-                      <div className="text-xs text-gray-500">Break time</div>
+                      <div className="text-xs" style={{ color: '#3B82F6' }}>Break time</div>
                     </div>
                     <svg width="33" height="32" viewBox="0 0 33 32" fill="none">
                       <path d="M13.584 2.66663V5.33329" stroke="#F54900" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
@@ -539,25 +567,33 @@ const TeacherDashboard = ({
                   ))}
                 </div>
                 <div className="grid grid-cols-7 gap-1">
-                  {calendarData.prevDays.map((date) => (
-                    <div key={`prev-${date}`} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{date}</div>
-                  ))}
-                  {calendarData.currDays.map((date) => (
-                    <div key={`curr-${date}`} className="text-center text-base text-black py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors">
-                      {date === calendarData.todayDate ? (
-                        <div className="w-6 h-6 mx-auto">
-                          <div className="w-6 h-6 border border-red-500 rounded-full flex items-center justify-center">
-                            <span className="text-sm">{date}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        date
-                      )}
-                    </div>
-                  ))}
-                  {calendarData.nextDays.map((date) => (
-                    <div key={`next-${date}`} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{date}</div>
-                  ))}
+                  {calendarData.prevDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex - 1, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                    return (
+                      <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400'} py-2 hover:bg-gray-50 rounded cursor-pointer`}>{isSelected ? (<span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span>) : dnum}</div>
+                    );
+                  })}
+                  {calendarData.currDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                    return (
+                      <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? '' : 'text-black hover:bg-blue-50'} py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors`}>
+                        {isSelected ? (
+                          <div className="w-6 h-6 mx-auto"><span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span></div>
+                        ) : (
+                          dnum
+                        )}
+                      </div>
+                    );
+                  })}
+                  {calendarData.nextDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex + 1, dnum);
+                    const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
+                    return (
+                      <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className={`text-center text-base ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400'} py-2 hover:bg-gray-50 rounded cursor-pointer`}>{isSelected ? (<span className="inline-flex w-6 h-6 items-center justify-center rounded-full bg-blue-600 text-white">{dnum}</span>) : dnum}</div>
+                    );
+                  })}
                 </div>
               </div>
 

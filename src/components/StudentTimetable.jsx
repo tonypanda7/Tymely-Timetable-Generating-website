@@ -395,7 +395,7 @@ const StudentTimetable = ({
                   <path d="M8.25 2.66669V5.33335" stroke="#F54900" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <div className="text-xs font-normal mt-2" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182', lineHeight: '16px' }}>
+              <div className="text-xs font-normal mt-2" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#3B82F6', lineHeight: '16px' }}>
                 Break time
               </div>
             </div>
@@ -466,7 +466,7 @@ const StudentTimetable = ({
                             return (
                               <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
                                 <div className="flex items-center justify-center h-10">
-                                  <span className="text-xs text-center" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                     {cellData.subjectName}
                                   </span>
                                 </div>

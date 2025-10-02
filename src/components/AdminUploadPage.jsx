@@ -31,7 +31,11 @@ const AdminUploadPage = ({
   setFreePeriodPercentage,
   // computed time slots from parent (may include LUNCH marker)
   timeSlots = [] ,
-  
+
+  // Teacher hours bypass toggle
+  bypassHoursCheck,
+  updateBypassSetting,
+
   // Actions
   saveSettings,
   generateTimetable,
@@ -322,6 +326,19 @@ const AdminUploadPage = ({
                 placeholder="20"
               />
             </div>
+
+            <div className="toggle-container">
+              <label className="dropdown-label">Bypass Teacher Working Hours:</label>
+              <label className="toggle-inline">
+                <input
+                  type="checkbox"
+                  checked={Boolean(bypassHoursCheck)}
+                  onChange={(e) => updateBypassSetting(Boolean(e.target.checked))}
+                  className="toggle-checkbox"
+                />
+                <span className="toggle-help">Allow accepting substitutions regardless of hours left</span>
+              </label>
+            </div>
           </div>
         </div>
       </section>
@@ -535,6 +552,30 @@ const AdminUploadPage = ({
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
+        }
+
+        .toggle-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .toggle-inline {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .toggle-checkbox {
+          width: 16px;
+          height: 16px;
+        }
+
+        .toggle-help {
+          font-family: 'Poppins', sans-serif;
+          font-size: 0.875rem;
+          color: #000;
+          opacity: 0.7;
         }
 
         .dropdown-label,
@@ -895,7 +936,11 @@ AdminUploadPage.propTypes = {
   setClassDuration: PropTypes.func.isRequired,
   freePeriodPercentage: PropTypes.number.isRequired,
   setFreePeriodPercentage: PropTypes.func.isRequired,
-  
+
+  // Teacher hours bypass toggle
+  bypassHoursCheck: PropTypes.bool.isRequired,
+  updateBypassSetting: PropTypes.func.isRequired,
+
   // Actions
   saveSettings: PropTypes.func.isRequired,
   generateTimetable: PropTypes.func.isRequired,

@@ -94,6 +94,18 @@ function parseTimetableData(raw) {
   return Array.isArray(raw) ? raw : [];
 }
 
+// Compute ISO date (YYYY-MM-DD) for the Monday of the week containing the provided date
+function getWeekStartISO(dt) {
+  const d = new Date(dt);
+  // Convert so that Monday is start of week
+  const day = d.getDay(); // 0 (Sun) .. 6 (Sat)
+  const isoDay = (day + 6) % 7; // 0 (Mon) .. 6 (Sun)
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - isoDay);
+  monday.setHours(0,0,0,0);
+  return monday.toISOString().split('T')[0];
+}
+
 // Normalize IDs/names for robust comparisons (trim + lowercase)
 function normalizeId(val) {
   return String(val || '').trim().toLowerCase();
@@ -205,6 +217,7 @@ export default function App() {
   const [cancellations, setCancellations] = useState([]);
   const [teacherOffers, setTeacherOffers] = useState([]);
   const [acceptedSubstitutions, setAcceptedSubstitutions] = useState([]);
+  const [studentNotifDocs, setStudentNotifDocs] = useState([]);
 
   // Programs, Courses, Ratings
   const [programs, setPrograms] = useState({});
@@ -374,9 +387,55 @@ export default function App() {
 
       const cancellationsCol = collection(db, "artifacts", appId, "public", "data", "cancellations");
       const unsubscribeCancellations = onSnapshot(cancellationsCol, (snapshot) => {
+        const currentWeek = getWeekStartISO(new Date());
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setCancellations(items);
+        // Only expose cancellations relevant to the current week
+        const filtered = items.filter((c) => {
+          if (!c) return false;
+          if (c.weekStart) return String(c.weekStart) === String(currentWeek);
+          // fallback: if createdAt exists, check if its week matches
+          if (c.createdAt) {
+            try {
+              const createdWeek = getWeekStartISO(new Date(Number(c.createdAt)));
+              return String(createdWeek) === String(currentWeek);
+            } catch (e) {
+              return false;
+            }
+          }
+          return false;
+        });
+        setCancellations(filtered);
       }, onErr('cancellations'));
+
+      // Remove cancellations from previous weeks from the DB to keep data clean
+      (async () => {
+        try {
+          const currentWeek = getWeekStartISO(new Date());
+          const snap = await getDocs(cancellationsCol);
+          const ops = [];
+          snap.docs.forEach((d) => {
+            const data = d.data() || {};
+            const id = d.id;
+            if (data.weekStart) {
+              if (String(data.weekStart) !== String(currentWeek)) {
+                ops.push(deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", id)));
+              }
+            } else if (data.createdAt) {
+              try {
+                const createdWeek = getWeekStartISO(new Date(Number(data.createdAt)));
+                if (String(createdWeek) !== String(currentWeek)) {
+                  ops.push(deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", id)));
+                }
+              } catch (e) {
+                // ignore parse errors
+              }
+            }
+          });
+          if (ops.length) await Promise.all(ops);
+        } catch (cleanupErr) {
+          console.warn('Failed to cleanup old cancellations', cleanupErr);
+        }
+      })();
 
       const programsCol = collection(db, "artifacts", appId, "public", "data", "programs");
       const unsubscribePrograms = onSnapshot(programsCol, (snapshot) => {
@@ -390,6 +449,7 @@ export default function App() {
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         setTeacherOffers(items.filter(n => (n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending') || (n.type === 'cancellation_approved' && n.candidateId === collegeId)));
         setAcceptedSubstitutions(items.filter(n => n.type === 'substitution_offer' && n.status === 'accepted'));
+        setStudentNotifDocs(items.filter(n => String(n.forRole || '').toLowerCase() === 'student'));
       }, onErr('notifications'));
 
       // Student electives listener
@@ -1309,6 +1369,21 @@ export default function App() {
         await setDoc(teacherRef, { hoursLeft: teacherHoursLeft[t.id] }, { merge: true });
       }
 
+      // Clear all notifications (teacher and student) and reset cancellations when a new timetable is generated
+      try {
+        const notificationsColRef = collection(db, "artifacts", appId, "public", "data", "notifications");
+        const notifSnap = await getDocs(notificationsColRef);
+        const deleteNotifOps = notifSnap.docs.map(nd => deleteDoc(doc(db, "artifacts", appId, "public", "data", "notifications", nd.id)));
+        await Promise.all(deleteNotifOps);
+
+        const cancellationsColRef = collection(db, "artifacts", appId, "public", "data", "cancellations");
+        const cancSnap = await getDocs(cancellationsColRef);
+        const deleteCancOps = cancSnap.docs.map(cd => deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", cd.id)));
+        await Promise.all(deleteCancOps);
+      } catch (cleanupErr) {
+        console.warn('Failed to clear notifications/cancellations after timetable generation', cleanupErr);
+      }
+
       showMessage("Timetable generated and saved successfully!", "success");
     } catch (error) {
       console.error("Error generating/saving timetable:", error);
@@ -1392,7 +1467,7 @@ export default function App() {
     if (role === 'teacher' && slot.status === 'confirmed' && subjectName !== 'Free') {
       try {
         const cancelRef = doc(db, "artifacts", appId, "public", "data", "cancellations", `${className}_${dayIndex}_${periodIndex}`);
-        await setDoc(cancelRef, { className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, status: 'pending', createdAt: Date.now() }, { merge: true });
+        await setDoc(cancelRef, { className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, status: 'pending', createdAt: Date.now(), weekStart: getWeekStartISO(Date.now()) }, { merge: true });
         const notifRef = doc(db, "artifacts", appId, "public", "data", "notifications", `admin_${className}_${dayIndex}_${periodIndex}`);
         await setDoc(notifRef, { type: 'teacher_cancellation_request', status: 'pending', forRole: 'admin', className, dayIndex, periodIndex, subjectName, teacherId: currentTeacherId, createdAt: Date.now() }, { merge: true });
         showMessage('Cancellation request sent to admin.', 'info');
@@ -1562,15 +1637,36 @@ export default function App() {
         status: 'approved',
         forRole: 'teacher',
         candidateId: requesterId,
+        recipientId: requesterId,
+        teacherId: requesterId,
         className: c.className,
         dayIndex: Number(c.dayIndex),
         periodIndex: Number(c.periodIndex),
         subjectName: c.subjectName,
+        title: 'Cancellation request approved',
+        message: `Your request to cancel ${c.subjectName} for ${c.className} on day ${Number(c.dayIndex)+1} period ${Number(c.periodIndex)+1} was approved by admin.`,
         createdAt: Date.now()
       }, { merge: true });
 
       // 4) Mark cancellation approved
-      await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now() }, { merge: true });
+      await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now(), weekStart: getWeekStartISO(Date.now()) }, { merge: true });
+
+      // 5) Create student-facing notification for this class
+      try {
+        const studentNotifId = `student_cancel_${c.className}_${c.dayIndex}_${c.periodIndex}_${Date.now()}`;
+        await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", studentNotifId), {
+          type: 'cancellation_for_students',
+          forRole: 'student',
+          className: c.className,
+          dayIndex: Number(c.dayIndex),
+          periodIndex: Number(c.periodIndex),
+          subjectName: c.subjectName,
+          createdAt: Date.now(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Failed to create student notification for cancellation', e);
+      }
+
       showMessage('Cancellation approved and offers sent.', 'success');
     } catch (e) {
       console.error(e);
@@ -1640,6 +1736,24 @@ export default function App() {
 
       // Mark notification accepted
       await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", offer.id), { status: 'accepted', actedAt: Date.now() }, { merge: true });
+
+      // Create student-facing notification about substitution assignment
+      try {
+        const stuNotifId = `student_sub_${offer.className}_${offer.dayIndex}_${offer.periodIndex}_${Date.now()}`;
+        await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", stuNotifId), {
+          type: 'substitution_for_students',
+          forRole: 'student',
+          className: offer.className,
+          dayIndex: Number(offer.dayIndex),
+          periodIndex: Number(offer.periodIndex),
+          subjectName: offer.subjectName,
+          candidateId: collegeId,
+          actedAt: Date.now(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Failed to create student notification for substitution', e);
+      }
+
       showMessage('Substitution accepted.', 'success');
     } catch (e) {
       console.error(e);
@@ -1754,6 +1868,22 @@ export default function App() {
           timestamp: fmt(n.actedAt || n.createdAt),
           read: false,
         });
+      });
+
+      // Include any explicit student-targeted notifications from notifications collection
+      (Array.isArray(studentNotifDocs) ? studentNotifDocs : []).forEach((n) => {
+        try {
+          if (!studentClass || String(n.className) !== String(studentClass)) return;
+          const t = String(n.type || '').toLowerCase();
+          if (t === 'cancellation_for_students' || t === 'cancellation_for_students') {
+            results.push({ id: `snotif_${n.id}`, title: `Class cancelled: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)})`, timestamp: fmt(n.createdAt), read: false });
+          } else if (t === 'substitution_for_students' || t === 'substitution_for_students') {
+            const tName = (teachers.find(t2 => t2.id === n.candidateId)?.name) || n.candidateId || 'Teacher';
+            results.push({ id: `snotif_${n.id}`, title: `Substitution: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)}) will be taken by ${tName}`, timestamp: fmt(n.actedAt || n.createdAt), read: false });
+          } else if (n.title || n.message) {
+            results.push({ id: `snotif_${n.id}`, title: n.title || String(n.message || ''), timestamp: fmt(n.createdAt || n.actedAt), read: false });
+          }
+        } catch (e) {}
       });
     } catch {}
     return results.sort((a,b)=> String(b.timestamp).localeCompare(String(a.timestamp)));
@@ -2148,6 +2278,10 @@ export default function App() {
               setClassDuration={setClassDuration}
               freePeriodPercentage={freePeriodPercentage}
               setFreePeriodPercentage={setFreePeriodPercentage}
+
+              // Teacher hours bypass toggle
+              bypassHoursCheck={bypassHoursCheck}
+              updateBypassSetting={updateBypassSetting}
 
               // Actions
               saveSettings={saveSettings}
