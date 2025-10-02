@@ -113,7 +113,7 @@ const CourseManagementPage = ({
   const selectedClassData = classes.find(cls => cls.name === selectedClass);
 
   const AddSubjectModal = () => (
-    <div className="modal-overlay" onClick={() => setShowAddCourseModal(false)}>
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAddCourseModal(false); }}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-form">
           <h2 className="modal-title">Add Subject to Course</h2>
