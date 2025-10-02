@@ -213,7 +213,7 @@ const TeacherNotifications = ({
               <p className="notifications-column__subtitle">Requests sent by you</p>
             </div>
             <div className="notifications-list">
-              {displaySentNotifications.filter(n => !isDismissed(n.id)).map((item) => (
+              {sentNotifications.filter(n => !isDismissed(n.id)).map((item) => (
                 <NotificationCard
                   key={item.id}
                   notification={item}
@@ -221,6 +221,9 @@ const TeacherNotifications = ({
                   onClose={(n) => dismissNotification(n.id)}
                 />
               ))}
+              {sentNotifications.filter(n => !isDismissed(n.id)).length === 0 && (
+                <div className="text-gray-600">No sent requests.</div>
+              )}
             </div>
           </section>
 
@@ -230,7 +233,7 @@ const TeacherNotifications = ({
               <p className="notifications-column__subtitle">Requests sent by others</p>
             </div>
             <div className="notifications-list">
-              {displayReceivedNotifications.filter(n => !isDismissed(n.id)).map((item) => (
+              {receivedNotifications.filter(n => !isDismissed(n.id)).map((item) => (
                 <NotificationCard
                   key={item.id}
                   notification={item}
@@ -246,6 +249,9 @@ const TeacherNotifications = ({
                   }}
                 />
               ))}
+              {receivedNotifications.filter(n => !isDismissed(n.id)).length === 0 && (
+                <div className="text-gray-600">No received requests.</div>
+              )}
             </div>
           </section>
         </div>
