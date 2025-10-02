@@ -141,8 +141,9 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
         {visibleMenuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`nav-item ${currentView === item.id ? 'active' : ''}`}
+            onClick={() => handleItemClick(item)}
+            className={`nav-item ${(item.action !== 'logout' && currentView === item.id) ? 'active' : ''}`}
+            aria-label={item.action === 'logout' ? 'Logout' : item.label.replace('\n', ' ')}
           >
             <div className="nav-icon">
               {item.icon}
