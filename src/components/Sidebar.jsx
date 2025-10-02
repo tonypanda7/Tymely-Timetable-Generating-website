@@ -234,6 +234,7 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           flex-direction: column;
           gap: 1rem;
           padding: 0 1rem;
+          overflow-y: auto;
         }
         .sidebar.collapsed .nav-menu { align-items: center; padding: 0; }
 
