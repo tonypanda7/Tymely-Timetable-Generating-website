@@ -983,17 +983,19 @@ const Dashboard = ({
               <div className="grid grid-cols-7 gap-1">
                 {calendarData.prevDays.map((dnum) => {
                   const dt = new Date(calendarData.year, calendarData.monthIndex - 1, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                   return (
-                    <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-gray-400 hover:bg-gray-50 rounded cursor-pointer font-poppins`}>
-                      {dnum}
+                    <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400 hover:bg-gray-50 rounded cursor-pointer'} font-poppins`}>
+                      {isSelected ? (<span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>) : dnum}
                     </div>
                   );
                 })}
                 {calendarData.currDays.map((dnum) => {
                   const dt = new Date(calendarData.year, calendarData.monthIndex, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                   return (
-                    <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-black hover:bg-blue-50 rounded cursor-pointer transition-colors font-poppins`}>
-                      {dnum === calendarData.todayDate ? (
+                    <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? '' : 'text-black hover:bg-blue-50'} rounded cursor-pointer transition-colors font-poppins`}>
+                      {isSelected ? (
                         <span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>
                       ) : (
                         dnum
@@ -1003,9 +1005,10 @@ const Dashboard = ({
                 })}
                 {calendarData.nextDays.map((dnum) => {
                   const dt = new Date(calendarData.year, calendarData.monthIndex + 1, dnum);
+                  const isSelected = currentDate && dt.getFullYear() === currentDate.getFullYear() && dt.getMonth() === currentDate.getMonth() && dt.getDate() === currentDate.getDate();
                   return (
-                    <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} text-gray-400 hover:bg-gray-50 rounded cursor-pointer font-poppins`}>
-                      {dnum}
+                    <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedWeekDay(DISPLAY_CENTER); }} className={`text-center ${role === 'student' ? 'text-sm py-1' : 'text-base py-2'} ${isSelected ? 'bg-blue-50 rounded' : 'text-gray-400 hover:bg-gray-50 rounded cursor-pointer'} font-poppins`}>
+                      {isSelected ? (<span className={`inline-flex ${role === 'student' ? 'w-6 h-6' : 'w-8 h-8'} items-center justify-center rounded-full bg-blue-600 text-white`}>{dnum}</span>) : dnum}
                     </div>
                   );
                 })}
