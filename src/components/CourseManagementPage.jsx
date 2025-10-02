@@ -201,9 +201,8 @@ const CourseManagementPage = ({
             <input
               type="number"
               className="form-input"
-              value={localSemester}
-              onChange={(e) => setLocalSemester(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => setSemester(Number(localSemester) || 1)}
+              value={semester}
+              onChange={(e) => setSemester(e.target.value === '' ? '' : Number(e.target.value))}
               min="1"
               max="8"
             />
