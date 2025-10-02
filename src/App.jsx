@@ -2399,6 +2399,7 @@ export default function App() {
           classes={classes}
           courses={courses}
           programs={programs}
+          onLogout={backToLogin}
         />
       )}
 
@@ -2415,6 +2416,7 @@ export default function App() {
           timeSlots={cachedTimeSlots}
           breakSlots={breakSlots}
           teachers={teachers}
+          onLogout={backToLogin}
         />
       )}
 
