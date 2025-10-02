@@ -31,7 +31,11 @@ const AdminUploadPage = ({
   setFreePeriodPercentage,
   // computed time slots from parent (may include LUNCH marker)
   timeSlots = [] ,
-  
+
+  // Teacher hours bypass toggle
+  bypassHoursCheck,
+  updateBypassSetting,
+
   // Actions
   saveSettings,
   generateTimetable,
