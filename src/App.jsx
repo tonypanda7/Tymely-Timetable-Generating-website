@@ -205,6 +205,7 @@ export default function App() {
   const [cancellations, setCancellations] = useState([]);
   const [teacherOffers, setTeacherOffers] = useState([]);
   const [acceptedSubstitutions, setAcceptedSubstitutions] = useState([]);
+  const [studentNotifDocs, setStudentNotifDocs] = useState([]);
 
   // Programs, Courses, Ratings
   const [programs, setPrograms] = useState({});
