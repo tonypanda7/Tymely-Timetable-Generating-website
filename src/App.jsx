@@ -941,6 +941,24 @@ export default function App() {
     const classToUpdate = classes.find(cls => cls.name === selectedClass);
     if (!classToUpdate) { showMessage("Selected class not found.", "error"); return; }
 
+    // Helper: check elective eligibility from uploaded Courses by program+semester
+    const clsProgram = String(classToUpdate.program || '');
+    const clsSem = Number(classToUpdate.semester ?? classToUpdate.sem ?? semNum);
+    const coursesList = Object.values(courses || {});
+    const hasCourseCatalog = Array.isArray(coursesList) && coursesList.length > 0;
+    const isCatalogElective = (name) => {
+      const n = String(name || '').trim().toLowerCase();
+      return coursesList.some(c => String(c.program || '') === clsProgram && Number(c.semester || 0) === clsSem && String(c.name || '').trim().toLowerCase() === n && /elective/i.test(String(c.category || '')));
+    };
+
+    // If catalog exists, block mis-assignments: elective names in non-elective path, and vice-versa
+    if (hasCourseCatalog && !isElective) {
+      if (newSubjectName && isCatalogElective(newSubjectName)) {
+        showMessage("This course is marked as Elective in the catalog and cannot be added as a regular subject for this class.", "error");
+        return;
+      }
+    }
+
     let updatedSubjects = [...(classToUpdate.subjects || [])];
 
     if (isElective) {
@@ -962,6 +980,13 @@ export default function App() {
       if (details.some(d => !d.name || d.teachers.length === 0)) {
         showMessage('Fill each elective: name and at least one teacher.', 'error');
         return;
+      }
+      if (hasCourseCatalog) {
+        const invalid = details.find(d => !isCatalogElective(d.name));
+        if (invalid) {
+          showMessage(`Elective "${invalid.name}" is not marked as Elective for this class (program/semester) in the catalog.`, 'error');
+          return;
+        }
       }
       const group = {
         name: `${selectedClass} Electives (Sem ${semNum})`,
@@ -1312,19 +1337,30 @@ export default function App() {
     }
 
     // New validations: subjects without credits (no periods) and too many subjects vs available slots
-    const slotsPerDay = Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0) - (Array.isArray(electiveSlots) ? electiveSlots.length : 0));
-    const teachingSlotsPerWeek = Math.max(0, Number(workingDays || 0) * slotsPerDay);
+    const hasElectiveForClass = (c) => {
+      try {
+        const subs = Array.isArray(c.subjects) ? c.subjects : [];
+        if (subs.some(s => s && s.courseType === 'elective')) return true;
+        const program = String(c.program || '');
+        const sem = Number(c.semester ?? c.sem ?? 0);
+        if (!program || !sem) return false;
+        return Object.values(courses || {}).some(x => String(x.program || '') === program && Number(x.semester || 0) === sem && /elective/i.test(String(x.category || '')));
+      } catch { return false; }
+    };
 
     for (const cls of classes) {
       const subjList = Array.isArray(cls.subjects) ? cls.subjects : [];
       const noPeriodSubjects = subjList.filter(s => !s || Number(s.credits || 0) <= 0).map(s => s && s.name ? s.name : 'Unnamed');
       if (noPeriodSubjects.length > 0) {
-        showMessage(`Class ${cls.name}: the respective course has no periods -> ${noPeriodSubjects.join(', ')}`, 'error');
+        showMessage(`Class ${cls.name}: the respective course has no periods -> ${noPeriodSubjects.join(', ')}` , 'error');
         isGeneratingRef.current = false;
         return;
       }
-      if (subjList.length > teachingSlotsPerWeek) {
-        showMessage(`Class ${cls.name} has too many subjects (${subjList.length}) for available periods (${teachingSlotsPerWeek}).`, 'error');
+      const classSlotsPerDay = Math.max(0, Number(hoursPerDay || 0) - (Array.isArray(breakSlots) ? breakSlots.length : 0) - (hasElectiveForClass(cls) ? (Array.isArray(electiveSlots) ? electiveSlots.length : 0) : 0));
+      const classTeachingSlotsPerWeek = Math.max(0, Number(workingDays || 0) * classSlotsPerDay);
+      const nonElectiveSubjects = subjList.filter(s => !(s && s.courseType === 'elective'));
+      if (nonElectiveSubjects.length > classTeachingSlotsPerWeek) {
+        showMessage(`Class ${cls.name} has too many subjects (${nonElectiveSubjects.length}) for available periods (${classTeachingSlotsPerWeek}).`, 'error');
         isGeneratingRef.current = false;
         return;
       }
@@ -2258,6 +2294,13 @@ export default function App() {
               handleCoursesCSV={handleCoursesCSV}
               handleFeedbackCSV={handleFeedbackCSV}
               isUploading={isUploading}
+
+              // Counts
+              teacherCount={teachers.length}
+              studentCount={classes.reduce((sum, cls) => sum + (Array.isArray(cls.students) ? cls.students.length : 0), 0)}
+              classroomsCount={classroomsCount}
+              coursesCount={coursesCount}
+              feedbackCount={feedbackCount}
 
               // Timetable settings
               workingDays={workingDays}

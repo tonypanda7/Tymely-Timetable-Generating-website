@@ -9,7 +9,14 @@ const AdminUploadPage = ({
   handleCoursesCSV,
   handleFeedbackCSV,
   isUploading,
-  
+
+  // Counts
+  teacherCount = 0,
+  studentCount = 0,
+  classroomsCount = 0,
+  coursesCount = 0,
+  feedbackCount = 0,
+
   // Timetable settings
   workingDays,
   setWorkingDays,
@@ -78,11 +85,12 @@ const AdminUploadPage = ({
     return value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
   };
 
-  const UploadBox = ({ 
-    title, 
-    uploadType, 
-    handler, 
-    accept = ".csv,.xlsx,.xls" 
+  const UploadBox = ({
+    title,
+    uploadType,
+    handler,
+    accept = ".csv,.xlsx,.xls",
+    footer = null
   }) => (
     <div className="upload-box-container">
       <label className="upload-box-label">{title}</label>
@@ -114,6 +122,7 @@ const AdminUploadPage = ({
           className="file-input"
         />
       </div>
+      {footer && <div className="upload-footer">{footer}</div>}
     </div>
   );
 
@@ -196,11 +205,13 @@ const AdminUploadPage = ({
               title="Upload Teachers CSV"
               uploadType="teachers"
               handler={handleTeacherCSV}
+              footer={<p className="upload-count">Current teachers: {teacherCount}</p>}
             />
             <UploadBox
               title="Upload Students CSV"
               uploadType="students"
               handler={handleStudentCSV}
+              footer={<p className="upload-count">Current students: {studentCount}</p>}
             />
           </div>
           
@@ -209,11 +220,13 @@ const AdminUploadPage = ({
               title="Upload Classrooms CSV"
               uploadType="classrooms"
               handler={handleClassroomsCSV}
+              footer={<p className="upload-count">Current classrooms: {classroomsCount}</p>}
             />
             <UploadBox
               title="Upload Courses CSV"
               uploadType="courses"
               handler={handleCoursesCSV}
+              footer={<p className="upload-count">Current courses: {coursesCount}</p>}
             />
           </div>
           
@@ -222,6 +235,7 @@ const AdminUploadPage = ({
               title="Upload Students' Feedback CSV"
               uploadType="feedback"
               handler={handleFeedbackCSV}
+              footer={<p className="upload-count">Feedback entries: {feedbackCount}</p>}
             />
           </div>
         </div>
@@ -435,6 +449,20 @@ const AdminUploadPage = ({
           font-weight: 400;
           color: #000;
           text-align: center;
+        }
+
+        .upload-footer {
+          margin-top: 0.25rem;
+          text-align: center;
+        }
+
+        .upload-count {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          font-weight: 400;
+          color: #0F172A;
+          opacity: 0.6;
+          margin: 0;
         }
 
         .upload-box {
@@ -916,7 +944,14 @@ AdminUploadPage.propTypes = {
   handleCoursesCSV: PropTypes.func.isRequired,
   handleFeedbackCSV: PropTypes.func.isRequired,
   isUploading: PropTypes.bool,
-  
+
+  // Counts
+  teacherCount: PropTypes.number,
+  studentCount: PropTypes.number,
+  classroomsCount: PropTypes.number,
+  coursesCount: PropTypes.number,
+  feedbackCount: PropTypes.number,
+
   // Timetable settings
   workingDays: PropTypes.number.isRequired,
   setWorkingDays: PropTypes.func.isRequired,
