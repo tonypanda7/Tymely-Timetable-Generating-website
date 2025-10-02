@@ -1573,6 +1573,23 @@ export default function App() {
 
       // 4) Mark cancellation approved
       await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now() }, { merge: true });
+
+      // 5) Create student-facing notification for this class
+      try {
+        const studentNotifId = `student_cancel_${c.className}_${c.dayIndex}_${c.periodIndex}_${Date.now()}`;
+        await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", studentNotifId), {
+          type: 'cancellation_for_students',
+          forRole: 'student',
+          className: c.className,
+          dayIndex: Number(c.dayIndex),
+          periodIndex: Number(c.periodIndex),
+          subjectName: c.subjectName,
+          createdAt: Date.now(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Failed to create student notification for cancellation', e);
+      }
+
       showMessage('Cancellation approved and offers sent.', 'success');
     } catch (e) {
       console.error(e);
