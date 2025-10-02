@@ -407,6 +407,36 @@ export default function App() {
         setCancellations(filtered);
       }, onErr('cancellations'));
 
+      // Remove cancellations from previous weeks from the DB to keep data clean
+      (async () => {
+        try {
+          const currentWeek = getWeekStartISO(new Date());
+          const snap = await getDocs(cancellationsCol);
+          const ops = [];
+          snap.docs.forEach((d) => {
+            const data = d.data() || {};
+            const id = d.id;
+            if (data.weekStart) {
+              if (String(data.weekStart) !== String(currentWeek)) {
+                ops.push(deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", id)));
+              }
+            } else if (data.createdAt) {
+              try {
+                const createdWeek = getWeekStartISO(new Date(Number(data.createdAt)));
+                if (String(createdWeek) !== String(currentWeek)) {
+                  ops.push(deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", id)));
+                }
+              } catch (e) {
+                // ignore parse errors
+              }
+            }
+          });
+          if (ops.length) await Promise.all(ops);
+        } catch (cleanupErr) {
+          console.warn('Failed to cleanup old cancellations', cleanupErr);
+        }
+      })();
+
       const programsCol = collection(db, "artifacts", appId, "public", "data", "programs");
       const unsubscribePrograms = onSnapshot(programsCol, (snapshot) => {
         const map = {};
