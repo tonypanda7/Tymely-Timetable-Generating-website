@@ -360,7 +360,7 @@ export default function App() {
       const notificationsCol = collection(db, "artifacts", appId, "public", "data", "notifications");
       const unsubscribeNotifications = onSnapshot(notificationsCol, (snapshot) => {
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setTeacherOffers(items.filter(n => n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending'));
+        setTeacherOffers(items.filter(n => (n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending') || (n.type === 'cancellation_approved' && n.candidateId === collegeId)));
         setAcceptedSubstitutions(items.filter(n => n.type === 'substitution_offer' && n.status === 'accepted'));
       }, onErr('notifications'));
 
@@ -1505,6 +1505,19 @@ export default function App() {
         }
       });
       await Promise.all(offerOps);
+
+      // Notify requester (approval)
+      await setDoc(doc(offersRefBase, `approval_${c.className}_${c.dayIndex}_${c.periodIndex}_${requesterId}`), {
+        type: 'cancellation_approved',
+        status: 'approved',
+        forRole: 'teacher',
+        candidateId: requesterId,
+        className: c.className,
+        dayIndex: Number(c.dayIndex),
+        periodIndex: Number(c.periodIndex),
+        subjectName: c.subjectName,
+        createdAt: Date.now()
+      }, { merge: true });
 
       // 4) Mark cancellation approved
       await setDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", c.id), { status: 'approved', approvedAt: Date.now() }, { merge: true });
