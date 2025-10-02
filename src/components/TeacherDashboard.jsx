@@ -279,12 +279,34 @@ const TeacherDashboard = ({
     return base;
   }, [teacherTimetable, generatedTimetables, collegeId, workingDays, hoursPerDay, slotDescriptors, breakOrLunchIndices]);
 
-  // Initialize selected day to today
+  // Initialize selected day to center (today will be centered)
   useEffect(() => {
-    const todayIdx = ((new Date().getDay() + 6) % 7); // Monday = 0
-    setSelectedDay(Math.min(todayIdx, workingDays - 1));
+    setSelectedDay(DISPLAY_CENTER);
     setCurrentDate(new Date());
   }, [workingDays]);
+
+  // Compute displayedDates centered on currentDate
+  const displayedDates = useMemo(() => {
+    const base = new Date(currentDate || new Date());
+    return Array.from({ length: DISPLAY_DAYS }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + (i - DISPLAY_CENTER));
+      return d;
+    });
+  }, [currentDate]);
+
+  const selectedWeekdayIndex = useMemo(() => {
+    const dt = displayedDates[selectedDay] || new Date();
+    return ((dt.getDay() + 6) % 7);
+  }, [displayedDates, selectedDay]);
+
+  const isSelectedDayNoClasses = useMemo(() => {
+    const weekdayIdx = selectedWeekdayIndex;
+    const row = Array.isArray(teacherTimetable?.[weekdayIdx]) ? teacherTimetable[weekdayIdx] : [];
+    if (!row || !row.length) return true;
+    const hasTeaching = row.some(slot => slot && slot.status !== 'break' && slot.status !== 'free' && !/lunch/i.test(String(slot.subjectName || '')));
+    return !hasTeaching;
+  }, [teacherTimetable, selectedWeekdayIndex]);
 
   // Generate circular progress SVG
   const CircularProgress = ({ progress, size = 73, strokeWidth = 8 }) => {
