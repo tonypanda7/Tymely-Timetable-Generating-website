@@ -51,6 +51,23 @@ const AdminUploadPage = ({
   isPurging
 }) => {
   const [dragActive, setDragActive] = useState({});
+  const [uploadedNames, setUploadedNames] = useState({});
+
+  const onFileSelect = (uploadType, handler, e) => {
+    try {
+      const files = (e && e.target && e.target.files) ? e.target.files : (e && e.dataTransfer && e.dataTransfer.files) ? e.dataTransfer.files : null;
+      if (files && files.length) {
+        const names = Array.from(files).map(f => f.name).join(', ');
+        setUploadedNames(prev => ({ ...prev, [uploadType]: names }));
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    if (typeof handler === 'function') {
+      try { handler(e); } catch (err) { /* ignore handler errors here */ }
+    }
+  };
 
   const handleDrag = (e, uploadType) => {
     e.preventDefault();
