@@ -199,6 +199,9 @@ export default function App() {
   const [weeklyHoursLeft, setWeeklyHoursLeft] = useState(0);
   const [monthlyHoursLeft, setMonthlyHoursLeft] = useState(0);
 
+  // Admin toggle: bypass hoursLeft check for substitution acceptance
+  const [bypassHoursCheck, setBypassHoursCheck] = useState(false);
+
   // UI state
   const [message, setMessage] = useState({ text: "", type: "info" });
   const [currentView, setCurrentView] = useState('dashboard');
