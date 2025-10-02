@@ -1576,7 +1576,7 @@ export default function App() {
       if (!tDoc.exists()) { showMessage('Class timetable not found.', 'error'); return; }
       const table = parseTimetableData(tDoc.data().timetable);
       const currentSlot = table?.[offer.dayIndex]?.[offer.periodIndex];
-      if (!currentSlot || currentSlot.subjectName !== 'Free') { showMessage('Slot no longer available.', 'error'); return; }
+      if (!currentSlot || String(currentSlot.subjectName || '').toLowerCase() !== 'free') { showMessage('Slot no longer available.', 'error'); return; }
 
       // Ensure teacher (candidate) is not assigned elsewhere at this slot by checking latest timetables
       const timetablesRef2 = collection(db, "artifacts", appId, "public", "data", "timetables");
@@ -1584,7 +1584,7 @@ export default function App() {
       for (const ddoc of ttSnap2.docs) {
         const otherTable = parseTimetableData(ddoc.data().timetable);
         const s = otherTable?.[offer.dayIndex]?.[offer.periodIndex];
-        if (s && s.status !== 'free' && s.status !== 'break' && s.teacherId === collegeId) {
+        if (s && s.status !== 'free' && s.status !== 'break' && normalizeId(s.teacherId) === normalizeId(collegeId)) {
           showMessage('You are busy at that time slot and cannot accept substitution.', 'error');
           return;
         }
