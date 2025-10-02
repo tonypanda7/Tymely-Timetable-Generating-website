@@ -941,6 +941,24 @@ export default function App() {
     const classToUpdate = classes.find(cls => cls.name === selectedClass);
     if (!classToUpdate) { showMessage("Selected class not found.", "error"); return; }
 
+    // Helper: check elective eligibility from uploaded Courses by program+semester
+    const clsProgram = String(classToUpdate.program || '');
+    const clsSem = Number(classToUpdate.semester ?? classToUpdate.sem ?? semNum);
+    const coursesList = Object.values(courses || {});
+    const hasCourseCatalog = Array.isArray(coursesList) && coursesList.length > 0;
+    const isCatalogElective = (name) => {
+      const n = String(name || '').trim().toLowerCase();
+      return coursesList.some(c => String(c.program || '') === clsProgram && Number(c.semester || 0) === clsSem && String(c.name || '').trim().toLowerCase() === n && /elective/i.test(String(c.category || '')));
+    };
+
+    // If catalog exists, block mis-assignments: elective names in non-elective path, and vice-versa
+    if (hasCourseCatalog && !isElective) {
+      if (newSubjectName && isCatalogElective(newSubjectName)) {
+        showMessage("This course is marked as Elective in the catalog and cannot be added as a regular subject for this class.", "error");
+        return;
+      }
+    }
+
     let updatedSubjects = [...(classToUpdate.subjects || [])];
 
     if (isElective) {
