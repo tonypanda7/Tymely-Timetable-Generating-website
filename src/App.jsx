@@ -1579,10 +1579,14 @@ export default function App() {
         status: 'approved',
         forRole: 'teacher',
         candidateId: requesterId,
+        recipientId: requesterId,
+        teacherId: requesterId,
         className: c.className,
         dayIndex: Number(c.dayIndex),
         periodIndex: Number(c.periodIndex),
         subjectName: c.subjectName,
+        title: 'Cancellation request approved',
+        message: `Your request to cancel ${c.subjectName} for ${c.className} on day ${Number(c.dayIndex)+1} period ${Number(c.periodIndex)+1} was approved by admin.`,
         createdAt: Date.now()
       }, { merge: true });
 
