@@ -1659,6 +1659,24 @@ export default function App() {
 
       // Mark notification accepted
       await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", offer.id), { status: 'accepted', actedAt: Date.now() }, { merge: true });
+
+      // Create student-facing notification about substitution assignment
+      try {
+        const stuNotifId = `student_sub_${offer.className}_${offer.dayIndex}_${offer.periodIndex}_${Date.now()}`;
+        await setDoc(doc(db, "artifacts", appId, "public", "data", "notifications", stuNotifId), {
+          type: 'substitution_for_students',
+          forRole: 'student',
+          className: offer.className,
+          dayIndex: Number(offer.dayIndex),
+          periodIndex: Number(offer.periodIndex),
+          subjectName: offer.subjectName,
+          candidateId: collegeId,
+          actedAt: Date.now(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Failed to create student notification for substitution', e);
+      }
+
       showMessage('Substitution accepted.', 'success');
     } catch (e) {
       console.error(e);
