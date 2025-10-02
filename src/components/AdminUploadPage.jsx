@@ -83,10 +83,10 @@ const AdminUploadPage = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(prev => ({ ...prev, [uploadType]: false }));
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const fileEvent = { target: { files: e.dataTransfer.files } };
-      handler(fileEvent);
+
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const fileEvent = { target: { files: e.dataTransfer.files }, dataTransfer: e.dataTransfer };
+      onFileSelect(uploadType, handler, fileEvent);
     }
   };
 
