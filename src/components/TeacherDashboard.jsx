@@ -567,25 +567,34 @@ const TeacherDashboard = ({
                   ))}
                 </div>
                 <div className="grid grid-cols-7 gap-1">
-                  {calendarData.prevDays.map((date) => (
-                    <div key={`prev-${date}`} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{date}</div>
-                  ))}
-                  {calendarData.currDays.map((date) => (
-                    <div key={`curr-${date}`} className="text-center text-base text-black py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors">
-                      {date === calendarData.todayDate ? (
-                        <div className="w-6 h-6 mx-auto">
-                          <div className="w-6 h-6 border border-red-500 rounded-full flex items-center justify-center">
-                            <span className="text-sm">{date}</span>
+                  {calendarData.prevDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex - 1, dnum);
+                    return (
+                      <div key={`prev-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{dnum}</div>
+                    );
+                  })}
+                  {calendarData.currDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex, dnum);
+                    return (
+                      <div key={`curr-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-black py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors">
+                        {dnum === calendarData.todayDate ? (
+                          <div className="w-6 h-6 mx-auto">
+                            <div className="w-6 h-6 border border-red-500 rounded-full flex items-center justify-center">
+                              <span className="text-sm">{dnum}</span>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        date
-                      )}
-                    </div>
-                  ))}
-                  {calendarData.nextDays.map((date) => (
-                    <div key={`next-${date}`} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{date}</div>
-                  ))}
+                        ) : (
+                          dnum
+                        )}
+                      </div>
+                    );
+                  })}
+                  {calendarData.nextDays.map((dnum) => {
+                    const dt = new Date(calendarData.year, calendarData.monthIndex + 1, dnum);
+                    return (
+                      <div key={`next-${dnum}`} onClick={() => { setCurrentDate(dt); setSelectedDay(DISPLAY_CENTER); }} className="text-center text-base text-gray-400 py-2 hover:bg-gray-50 rounded cursor-pointer">{dnum}</div>
+                    );
+                  })}
                 </div>
               </div>
 
