@@ -1189,7 +1189,8 @@ export default function App() {
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
       await setDoc(settingsRef, {
-        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage
+        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage,
+        bypassHoursCheck: Boolean(bypassHoursCheck)
       }, { merge: true });
       showMessage("Settings saved.", "success");
     } catch (e) {
