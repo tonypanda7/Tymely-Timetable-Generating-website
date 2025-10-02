@@ -2149,6 +2149,10 @@ export default function App() {
               freePeriodPercentage={freePeriodPercentage}
               setFreePeriodPercentage={setFreePeriodPercentage}
 
+              // Teacher hours bypass toggle
+              bypassHoursCheck={bypassHoursCheck}
+              updateBypassSetting={updateBypassSetting}
+
               // Actions
               saveSettings={saveSettings}
               generateTimetable={generateTimetable}
