@@ -387,8 +387,24 @@ export default function App() {
 
       const cancellationsCol = collection(db, "artifacts", appId, "public", "data", "cancellations");
       const unsubscribeCancellations = onSnapshot(cancellationsCol, (snapshot) => {
+        const currentWeek = getWeekStartISO(new Date());
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setCancellations(items);
+        // Only expose cancellations relevant to the current week
+        const filtered = items.filter((c) => {
+          if (!c) return false;
+          if (c.weekStart) return String(c.weekStart) === String(currentWeek);
+          // fallback: if createdAt exists, check if its week matches
+          if (c.createdAt) {
+            try {
+              const createdWeek = getWeekStartISO(new Date(Number(c.createdAt)));
+              return String(createdWeek) === String(currentWeek);
+            } catch (e) {
+              return false;
+            }
+          }
+          return false;
+        });
+        setCancellations(filtered);
       }, onErr('cancellations'));
 
       const programsCol = collection(db, "artifacts", appId, "public", "data", "programs");
