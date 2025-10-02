@@ -326,6 +326,19 @@ const AdminUploadPage = ({
                 placeholder="20"
               />
             </div>
+
+            <div className="toggle-container">
+              <label className="dropdown-label">Bypass Teacher Working Hours:</label>
+              <label className="toggle-inline">
+                <input
+                  type="checkbox"
+                  checked={Boolean(bypassHoursCheck)}
+                  onChange={(e) => updateBypassSetting(Boolean(e.target.checked))}
+                  className="toggle-checkbox"
+                />
+                <span className="toggle-help">Allow accepting substitutions regardless of hours left</span>
+              </label>
+            </div>
           </div>
         </div>
       </section>
