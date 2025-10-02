@@ -106,44 +106,6 @@ const TeacherNotifications = ({
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [teacherOffers]);
 
-  const sampleSentNotifications = [
-    {
-      id: 'sent-1',
-      title: 'Class cancel Request',
-      description: 'HS1003 Class for AIDS B- SEM1 requested to be cancelled for 20th December 2025, 2nd and 3rd period',
-      statusMeta: { label: 'Pending', variant: 'neutral' },
-    },
-    {
-      id: 'sent-2',
-      title: 'Leave Request sent to Admin',
-      description: 'Leave requested from 30th December 2025 to 10th January 2026',
-      statusMeta: { label: 'Pending', variant: 'neutral' },
-    },
-    {
-      id: 'sent-3',
-      title: 'Your Class cancelled Successfully',
-      description: 'CS1003 Class for IoT B- SEM1 requested to be cancelled for 20th December 2025, 1st period\nNo available teacher - class changed to self Learning',
-      statusMeta: { label: 'Approved', variant: 'success' },
-    },
-  ];
-
-  const sampleReceivedNotifications = [
-    {
-      id: 'received-1',
-      title: 'Class switch requested by Dr. Tina',
-      description: 'CS2002 for IoT A - SEM 2, 5th period class - today, requested to be taken if you are free',
-      statusMeta: { label: 'Pending', variant: 'neutral' },
-    },
-    {
-      id: 'received-2',
-      title: 'Class switch requested by Dr. Miraj',
-      description: 'CS2002 for IoT A - SEM 2, 7th period class - today, requested to be taken if you are free',
-      statusMeta: { label: 'Pending', variant: 'neutral' },
-    },
-  ];
-
-  const displaySentNotifications = sentNotifications.length ? sentNotifications : sampleSentNotifications;
-  const displayReceivedNotifications = receivedNotifications.length ? receivedNotifications : sampleReceivedNotifications;
 
   const [dismissedIds, setDismissedIds] = useState(new Set());
   const isDismissed = useCallback((id) => dismissedIds.has(id), [dismissedIds]);
