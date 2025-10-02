@@ -445,6 +445,20 @@ const AdminUploadPage = ({
           text-align: center;
         }
 
+        .upload-footer {
+          margin-top: 0.25rem;
+          text-align: center;
+        }
+
+        .upload-count {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.875rem;
+          font-weight: 400;
+          color: #0F172A;
+          opacity: 0.6;
+          margin: 0;
+        }
+
         .upload-box {
           position: relative;
           display: flex;
