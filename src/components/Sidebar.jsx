@@ -185,8 +185,9 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           flex-direction: column;
           padding: 2rem 0;
           z-index: 100;
+          overflow: hidden;
         }
-        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; }
+        .sidebar.collapsed { width: 72px; border-radius: 0 24px 24px 0; overflow-x: hidden; }
 
         .sidebar.light { background: #FFF; border-right: 1px solid rgba(0,0,0,0.1); }
         .sidebar.light .nav-item { color: #0A0A0A; }
@@ -240,6 +241,10 @@ const Sidebar = ({ currentView, onNavigate, role, collegeId, variant = 'dark', o
           width: 100%;
         }
         .sidebar.collapsed .nav-item { justify-content: center; gap: 0; padding: 0.5rem 0; width: 72px; }
+        .sidebar.collapsed .nav-item:hover,
+        .sidebar.collapsed .nav-item.active {
+          transform: none;
+        }
 
         .nav-item:hover {
           background: rgba(255, 255, 255, 0.1);
