@@ -136,47 +136,27 @@ const TeacherDashboard = ({
     };
   }, [teacherTimetable, workingDays, hoursPerDay, currentTeacher, timeSlots, slotDescriptors]);
 
-  const parseSlotLabel = (label) => {
-    const m = String(label || '').match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-    if (!m) return null;
-    const toMin = (s) => { const [h, mm] = s.split(':').map(Number); return h * 60 + mm; };
-    return { start: toMin(m[1]), end: toMin(m[2]) };
-  };
+  const teacherClassCompletion = useMemo(() => {
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    const available = completed + Math.max(0, Number(teacherStats.freeHours || 0));
+    const total = available;
+    const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    return { completed, total, percent };
+  }, [teacherStats.totalClasses, teacherStats.freeHours]);
 
-  const classesCompleted = useMemo(() => {
-    const now = new Date();
-    const todayIdx = ((now.getDay() + 6) % 7);
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    let completed = 0;
+  const plannedClassTarget = useMemo(() => {
+    const required = Number(teacherStats.requiredHours || 0);
+    if (required > 0) return required;
+    if (teacherClassCompletion.total > 0) return teacherClassCompletion.total;
+    return 13;
+  }, [teacherStats.requiredHours, teacherClassCompletion.total]);
 
-    const days = Math.min(Number(workingDays || 0), Array.isArray(teacherTimetable) ? teacherTimetable.length : 0);
-    for (let d = 0; d < days; d++) {
-      const row = Array.isArray(teacherTimetable[d]) ? teacherTimetable[d] : [];
-      const periods = Math.min(Number(hoursPerDay || 0), row.length, Array.isArray(timeSlots) ? timeSlots.length : Number(hoursPerDay || 0));
-      for (let p = 0; p < periods; p++) {
-        const lbl = (Array.isArray(timeSlots) && timeSlots[p]) ? timeSlots[p] : `${9 + p}:00-${10 + p}:00`;
-        if (/(\(LUNCH\))/i.test(String(lbl)) || /^\s*break\s*$/i.test(String(lbl))) continue;
-        const slot = row[p];
-        const subj = String(slot?.subjectName || '');
-        const isBreak = slot && (slot.status === 'break' || /break|lunch/i.test(subj));
-        if (isBreak) continue;
-        const isFree = !slot || slot.status === 'free' || subj === 'Free';
-        if (isFree) continue;
-
-        if (d < todayIdx) completed++;
-        else if (d === todayIdx) {
-          const parsed = parseSlotLabel(lbl);
-          if (parsed && parsed.end <= nowMin) completed++;
-        }
-      }
-    }
-    return { completed };
-  }, [teacherTimetable, timeSlots, workingDays, hoursPerDay]);
-
-  const progressPercent = useMemo(() => {
-    const total = Math.max(0, Number(teacherStats.totalClasses || 0));
-    return total > 0 ? Math.min(100, Math.round((classesCompleted.completed / total) * 100)) : 0;
-  }, [classesCompleted, teacherStats.totalClasses]);
+  const plannedClassPercent = useMemo(() => {
+    const target = plannedClassTarget;
+    if (target <= 0) return 0;
+    const completed = Math.max(0, Number(teacherStats.totalClasses || 0));
+    return Math.min(100, Math.round((completed / target) * 100));
+  }, [plannedClassTarget, teacherStats.totalClasses]);
 
   // Calendar helpers
   const calendarData = useMemo(() => {
@@ -445,7 +425,7 @@ const TeacherDashboard = ({
                         Classes Completed
                       </span>
                       <span className="text-2xl font-medium text-[#0A0A0A] leading-8 tracking-[0.07px]" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
-                        {classesCompleted.completed}/{teacherStats.totalClasses}
+                        {teacherStats.totalClasses}/{plannedClassTarget}
                       </span>
                     </div>
                   </div>
@@ -455,7 +435,7 @@ const TeacherDashboard = ({
                     <div
                       className="bg-[#030213] h-2 rounded-full transition-all duration-300"
                       style={{
-                        width: `${progressPercent}%`
+                        width: `${plannedClassPercent}%`
                       }}
                     ></div>
                   </div>
@@ -584,6 +564,17 @@ const TeacherDashboard = ({
                       <path d="M16.25 9.33337V28" stroke="#155DFC" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M4.24935 24C3.89573 24 3.55659 23.8595 3.30654 23.6095C3.05649 23.3594 2.91602 23.0203 2.91602 22.6667V5.33333C2.91602 4.97971 3.05649 4.64057 3.30654 4.39052C3.55659 4.14048 3.89573 4 4.24935 4H10.916C12.3305 4 13.6871 4.5619 14.6873 5.5621C15.6874 6.56229 16.2493 7.91885 16.2493 9.33333C16.2493 7.91885 16.8113 6.56229 17.8114 5.5621C18.8116 4.5619 20.1682 4 21.5827 4H28.2493C28.603 4 28.9421 4.14048 29.1922 4.39052C29.4422 4.64057 29.5827 4.97971 29.5827 5.33333V22.6667C29.5827 23.0203 29.4422 23.3594 29.1922 23.6095C28.9421 23.8595 28.603 24 28.2493 24H20.2493C19.1885 24 18.1711 24.4214 17.4209 25.1716C16.6708 25.9217 16.2493 26.9391 16.2493 28C16.2493 26.9391 15.8279 25.1716 15.0778 25.1716C14.3276 24.4214 13.3102 24 12.2493 24H4.24935Z" stroke="#155DFC" strokeWidth="2.66667" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-gray-500">Classes Completed</div>
+                      <div className="text-2xl font-medium text-black">{teacherClassCompletion.completed}/{teacherClassCompletion.total}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 bg-gray-200 rounded-full h-2">
+                    <div className="bg-black h-2 rounded-full" style={{ width: `${teacherClassCompletion.percent}%` }}></div>
                   </div>
                 </div>
               </div>
