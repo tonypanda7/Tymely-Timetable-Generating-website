@@ -142,6 +142,25 @@ export default function App() {
   const [timetableSettings, setTimetableSettings] = useState(null);
   const [electiveSlots, setElectiveSlots] = useState([]);
 
+  // Demo: allow auto-login via URL query `as=admin_ID` or `as=admin_ID` or `as=admin:ID` for screenshots
+  const autoLoginAppliedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoginAppliedRef.current) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const as = params.get('as') || params.get('autoLogin') || '';
+      if (!as) return;
+      const parts = as.replace(':', '_').split('_');
+      if (parts.length === 2 && parts[0].toLowerCase() === 'admin') {
+        const id = parts[1];
+        setCollegeId(id);
+        setRole('admin');
+        autoLoginAppliedRef.current = true;
+        console.info('Auto-login as admin:', id);
+      }
+    } catch (e) {}
+  }, []);
+
   const [generatedTimetables, setGeneratedTimetables] = useState({});
   const [simulationScenarios, setSimulationScenarios] = useState({});
   const [activeScenario, setActiveScenario] = useState(null);
