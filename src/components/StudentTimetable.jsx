@@ -188,8 +188,23 @@ const StudentTimetable = ({
 
   const downloadAsText = () => {
     const data = buildExportMatrix();
-    // Tab-separated for readability
-    const lines = data.map(row => row.join('\t')).join('\n');
+    if (!data || !data.length) return;
+    const cols = data[0].length;
+    const colWidths = Array(cols).fill(0);
+    data.forEach(row => {
+      for (let i = 0; i < cols; i++) {
+        const s = String(row[i] == null ? '' : row[i]);
+        colWidths[i] = Math.max(colWidths[i], s.length);
+      }
+    });
+
+    const lines = data.map(row => {
+      return row.map((cell, i) => {
+        const s = String(cell == null ? '' : cell);
+        return s + ' '.repeat(colWidths[i] - s.length);
+      }).join(' | ');
+    }).join('\n');
+
     const filename = `${(studentClass || 'class').toString().replace(/\W+/g,'_')}_timetable.txt`;
     saveAs(new Blob([lines], { type: 'text/plain;charset=utf-8' }), filename);
   };
@@ -523,21 +538,14 @@ const StudentTimetable = ({
           {/* Timetable Card */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm" style={{ maxWidth: '1042px', minHeight: '420px' }}>
             {/* Card Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 5.83331V17.5" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.49935 15C2.27834 15 2.06637 14.9122 1.91009 14.7559C1.75381 14.5996 1.66602 14.3877 1.66602 14.1667V3.33333C1.66602 3.11232 1.75381 2.90036 1.91009 2.74408C2.06637 2.5878 2.27834 2.5 2.49935 2.5H6.66602C7.55007 2.5 8.39792 2.85119 9.02304 3.47631C9.64816 4.10143 9.99935 4.94928 9.99935 5.83333C9.99935 4.94928 10.3505 4.10143 10.9757 3.47631C11.6008 2.85119 12.4486 2.5 13.3327 2.5H17.4993C17.7204 2.5 17.9323 2.5878 18.0886 2.74408C18.2449 2.90036 18.3327 3.11232 18.3327 3.33333V14.1667C18.3327 14.3877 18.2449 14.5996 18.0886 14.7559C17.9323 14.9122 17.7204 15 17.4993 15H12.4993C11.8363 15 11.2004 15.2634 10.7316 15.7322C10.2627 16.2011 9.99935 16.837 9.99935 17.5C9.99935 16.837 9.73596 16.2011 9.26712 15.7322C8.79828 15.2634 8.16239 15 7.49935 15H2.49935Z" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <h3 className="text-base font-normal" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#0A0A0A', lineHeight: '16px', letterSpacing: '-0.312px' }}>
-                  Weekly Timetable
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={downloadAsPDF} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download PDF</button>
-                <button onClick={downloadAsExcel} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Excel</button>
-                <button onClick={downloadAsText} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Text</button>
-              </div>
+            <div className="flex items-center gap-2 mb-8">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 5.83331V17.5" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2.49935 15C2.27834 15 2.06637 14.9122 1.91009 14.7559C1.75381 14.5996 1.66602 14.3877 1.66602 14.1667V3.33333C1.66602 3.11232 1.75381 2.90036 1.91009 2.74408C2.06637 2.5878 2.27834 2.5 2.49935 2.5H6.66602C7.55007 2.5 8.39792 2.85119 9.02304 3.47631C9.64816 4.10143 9.99935 4.94928 9.99935 5.83333C9.99935 4.94928 10.3505 4.10143 10.9757 3.47631C11.6008 2.85119 12.4486 2.5 13.3327 2.5H17.4993C17.7204 2.5 17.9323 2.5878 18.0886 2.74408C18.2449 2.90036 18.3327 3.11232 18.3327 3.33333V14.1667C18.3327 14.3877 18.2449 14.5996 18.0886 14.7559C17.9323 14.9122 17.7204 15 17.4993 15H12.4993C11.8363 15 11.2004 15.2634 10.7316 15.7322C10.2627 16.2011 9.99935 16.837 9.99935 17.5C9.99935 16.837 9.73596 16.2011 9.26712 15.7322C8.79828 15.2634 8.16239 15 7.49935 15H2.49935Z" stroke="#00A63E" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <h3 className="text-base font-normal" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#0A0A0A', lineHeight: '16px', letterSpacing: '-0.312px' }}>
+                Weekly Timetable
+              </h3>
             </div>
 
             {/* Table */}
@@ -625,6 +633,13 @@ const StudentTimetable = ({
                 </tbody>
               </table>
             </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={downloadAsPDF} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download PDF</button>
+              <button onClick={downloadAsExcel} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Excel</button>
+              <button onClick={downloadAsText} className="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Download Text</button>
+            </div>
+
           </div>
         </div>
       </main>
