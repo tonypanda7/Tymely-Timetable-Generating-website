@@ -568,6 +568,20 @@ const AdminUploadPage = ({
           word-break: break-all;
         }
 
+        .upload-filename-only {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Inter', sans-serif;
+          font-size: 1rem;
+          color: #0F172A;
+          opacity: 0.95;
+          padding: 0.75rem 1rem;
+          text-align: center;
+          width: 100%;
+          word-break: break-all;
+        }
+
         .file-input {
           position: absolute;
           inset: 0;
