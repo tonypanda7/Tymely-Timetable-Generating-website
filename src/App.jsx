@@ -391,6 +391,7 @@ export default function App() {
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         setTeacherOffers(items.filter(n => (n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending') || (n.type === 'cancellation_approved' && n.candidateId === collegeId)));
         setAcceptedSubstitutions(items.filter(n => n.type === 'substitution_offer' && n.status === 'accepted'));
+        setStudentNotifDocs(items.filter(n => String(n.forRole || '').toLowerCase() === 'student'));
       }, onErr('notifications'));
 
       // Student electives listener
