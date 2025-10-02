@@ -1480,22 +1480,29 @@ export default function App() {
       const requesterId = normalizeTeacherId(c.teacherId);
       const candidates = normalized.filter(tid => tid && tid !== requesterId);
 
-      // 3) Send substitution offers to available candidates (not busy at that slot)
+      // 3) Send substitution offers to available candidates (check latest DB timetables for availability)
       const offersRefBase = collection(db, "artifacts", appId, "public", "data", "notifications");
+      // Read latest timetables from Firestore to ensure availability checks are correct
+      const timetablesRef = collection(db, "artifacts", appId, "public", "data", "timetables");
+      const ttSnap = await getDocs(timetablesRef);
+      const ttDocs = ttSnap.docs.map(d => ({ id: d.id, table: parseTimetableData(d.data().timetable) }));
+
       const offerOps = candidates.map(async (tid) => {
         let busy = false;
-        for (const clsName of Object.keys(generatedTimetables)) {
-          const tt = generatedTimetables[clsName];
-          const slot2 = tt?.[c.dayIndex]?.[c.periodIndex];
+        for (const td of ttDocs) {
+          const slot2 = td.table?.[c.dayIndex]?.[c.periodIndex];
           if (slot2 && slot2.status !== 'free' && slot2.status !== 'break' && slot2.teacherId === tid) { busy = true; break; }
         }
         if (!busy) {
           const nid = `offer_${c.className}_${c.dayIndex}_${c.periodIndex}_${tid}`;
+          const requesterName = (teachers.find(t => t.id === requesterId) || {}).name || '';
           await setDoc(doc(offersRefBase, nid), {
             type: 'substitution_offer',
             status: 'pending',
             forRole: 'teacher',
             candidateId: tid,
+            requesterId,
+            requesterName,
             className: c.className,
             dayIndex: Number(c.dayIndex),
             periodIndex: Number(c.periodIndex),
@@ -1565,6 +1572,18 @@ export default function App() {
       const table = parseTimetableData(tDoc.data().timetable);
       const currentSlot = table?.[offer.dayIndex]?.[offer.periodIndex];
       if (!currentSlot || currentSlot.subjectName !== 'Free') { showMessage('Slot no longer available.', 'error'); return; }
+
+      // Ensure teacher (candidate) is not assigned elsewhere at this slot by checking latest timetables
+      const timetablesRef2 = collection(db, "artifacts", appId, "public", "data", "timetables");
+      const ttSnap2 = await getDocs(timetablesRef2);
+      for (const ddoc of ttSnap2.docs) {
+        const otherTable = parseTimetableData(ddoc.data().timetable);
+        const s = otherTable?.[offer.dayIndex]?.[offer.periodIndex];
+        if (s && s.status !== 'free' && s.status !== 'break' && s.teacherId === collegeId) {
+          showMessage('You are busy at that time slot and cannot accept substitution.', 'error');
+          return;
+        }
+      }
 
       // Reserve the slot
       table[offer.dayIndex][offer.periodIndex] = { subjectName: offer.subjectName, className: offer.className, status: 'confirmed', teacherId: collegeId };
