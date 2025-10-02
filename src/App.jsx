@@ -717,127 +717,117 @@ export default function App() {
   };
 
   const handleStudentCSV = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) { showMessage("No file selected.", "error"); return; }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) { showMessage("No file selected.", "error"); return; }
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const data = evt.target?.result;
-        if (!data) throw new Error("File data is empty.");
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet);
 
-        const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
-        const sanitizeId = (s) => String(s).replace(/\//g, '_').replace(/\s+/g, '-');
-        const existingClassIndex = classes.reduce((acc, cls) => {
-          if (!cls) return acc;
-          const nameKey = cls.name || cls.id;
-          if (nameKey) acc[nameKey] = cls;
-          if (cls.id) acc[cls.id] = cls;
-          return acc;
-        }, {});
-        const classesMap = {};
+    const readFile = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = evt.target?.result;
+          if (!data) throw new Error("File data is empty.");
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const json = XLSX.utils.sheet_to_json(sheet);
+          resolve(json);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = reject;
+      reader.readAsBinaryString(file);
+    });
 
-        const studentsPublicRef = collection(db, "artifacts", appId, "public", "data", "students");
-        const classPublicRef = collection(db, "artifacts", appId, "public", "data", "classes");
+    try {
+      const allRowsArrays = await Promise.all(files.map(readFile));
+      const json = allRowsArrays.flat();
 
-        const uploads = [];
-        const latestStudentIds = new Set();
-        json.forEach((row) => {
-          const studentId = String(get(row, ['StudentID', 'ID', 'student id']));
-          const studentName = get(row, ['Name', 'StudentName']) ? String(get(row, ['Name', 'StudentName'])) : '';
-          const program = get(row, ['Program', 'Major', 'Discipline']) ? String(get(row, ['Program', 'Major', 'Discipline'])) : '';
-          const semester = Number(get(row, ['Semester', 'Sem'])) || 1;
-          const section = get(row, ['Section', 'ClassSection']) ? String(get(row, ['Section', 'ClassSection'])) : 'A';
-          const classKey = `${program || 'Program'}-SEM${semester}-${section}`;
-          const classId = sanitizeId(classKey);
+      const get = (row, keys) => { for (const k of keys) if (row[k] !== undefined) return row[k]; return undefined; };
+      const sanitizeId = (s) => String(s).replace(/\//g, '_').replace(/\s+/g, '-');
+      const existingClassIndex = classes.reduce((acc, cls) => {
+        if (!cls) return acc;
+        const nameKey = cls.name || cls.id;
+        if (nameKey) acc[nameKey] = cls;
+        if (cls.id) acc[cls.id] = cls;
+        return acc;
+      }, {});
+      const classesMap = {};
 
-          if (!classKey || !studentId) {
-            throw new Error(`Missing class or student identifier in row: ${JSON.stringify(row)}`);
-          }
+      const studentsPublicRef = collection(db, 'artifacts', appId, 'public', 'data', 'students');
+      const classPublicRef = collection(db, 'artifacts', appId, 'public', 'data', 'classes');
 
-          if (!classesMap[classKey]) {
-            const existing = existingClassIndex[classKey] || existingClassIndex[classId] || {};
-            classesMap[classKey] = {
-              id: existing.id || classId,
-              name: classKey,
-              program,
-              semester,
-              section,
-              subjects: Array.isArray(existing.subjects) ? existing.subjects : [],
-              students: Array.isArray(existing.students) ? [...existing.students] : [],
-            };
-          }
-          classesMap[classKey].students.push(studentId);
+      const uploads = [];
+      json.forEach((row) => {
+        const studentId = String(get(row, ['StudentID', 'ID', 'student id']));
+        const studentName = get(row, ['Name', 'StudentName']) ? String(get(row, ['Name', 'StudentName'])) : '';
+        const program = get(row, ['Program', 'Major', 'Discipline']) ? String(get(row, ['Program', 'Major', 'Discipline'])) : '';
+        const semester = Number(get(row, ['Semester', 'Sem'])) || 1;
+        const section = get(row, ['Section', 'ClassSection']) ? String(get(row, ['Section', 'ClassSection'])) : 'A';
+        const classKey = `${program || 'Program'}-SEM${semester}-${section}`;
+        const classId = sanitizeId(classKey);
 
-          const parseList = (v) => (typeof v === 'string' ? v.split(',').map(s => s.trim()).filter(Boolean) : []);
-          const studentDoc = {
-            id: studentId,
-            name: studentName,
+        if (!classKey || !studentId) return;
+
+        if (!classesMap[classKey]) {
+          const existing = existingClassIndex[classKey] || existingClassIndex[classId] || {};
+          classesMap[classKey] = {
+            id: existing.id || classId,
+            name: classKey,
             program,
             semester,
             section,
-            minorCourses: parseList(get(row, ['MinorCourses', 'Minor'])),
-            skillBasedCourses: parseList(get(row, ['SkillBasedCourses', 'Skill-Based'])),
-            abilityEnhancementCourses: parseList(get(row, ['AbilityEnhancementCourses', 'AEC'])),
-            valueAddedCourses: parseList(get(row, ['ValueAddedCourses', 'VAC'])),
+            subjects: Array.isArray(existing.subjects) ? existing.subjects : [],
+            students: Array.isArray(existing.students) ? [...existing.students] : [],
           };
-          const sid = sanitizeId(studentId);
-          latestStudentIds.add(sid);
-          uploads.push(setDoc(doc(studentsPublicRef, sid), studentDoc, { merge: true }));
-        });
-
-        // Upload classes
-        Object.keys(classesMap).forEach((clsName) => {
-          const cls = classesMap[clsName];
-          cls.students = Array.from(new Set(cls.students));
-          uploads.push(setDoc(doc(classPublicRef, cls.id), cls, { merge: true }));
-        });
-
-        // Remove classes not present in current dataset
-        const currentIds = new Set(Object.keys(classesMap).map((n) => sanitizeId(n)));
-        const existing = await getDocs(classPublicRef);
-        existing.forEach((d) => {
-          if (!currentIds.has(d.id)) {
-            uploads.push(deleteDoc(doc(classPublicRef, d.id)));
-            // also remove any existing timetable for that class
-            const ttRef = doc(db, "artifacts", appId, "public", "data", "timetables", d.id);
-            uploads.push(deleteDoc(ttRef));
-          }
-        });
-
-        // Remove students not present in current dataset
-        const existingStudents = await getDocs(studentsPublicRef);
-        existingStudents.forEach((d) => {
-          if (!latestStudentIds.has(d.id)) {
-            uploads.push(deleteDoc(doc(studentsPublicRef, d.id)));
-          }
-        });
-
-        await Promise.all(uploads);
-        setClasses(Object.values(classesMap));
-
-        // Auto-populate subjects for all classes using existing Courses dataset
-        try {
-          await autoPopulateSubjectsFromCourses();
-          showMessage("Students uploaded. Classes synced and subjects auto-assigned.", "success");
-        } catch (e) {
-          console.error(e);
-          showMessage("Students uploaded. Failed to auto-assign subjects.", "error");
         }
-      } catch (error) {
-        console.error("Error uploading students:", error);
-        showMessage(`Failed to upload students. Check the console for details: ${error.message}`, "error");
-      } finally {
-        setIsUploading(false);
+        classesMap[classKey].students.push(studentId);
+
+        const parseList = (v) => (typeof v === 'string' ? v.split(',').map(s => s.trim()).filter(Boolean) : []);
+        const studentDoc = {
+          id: studentId,
+          name: studentName,
+          program,
+          semester,
+          section,
+          minorCourses: parseList(get(row, ['MinorCourses', 'Minor'])),
+          skillBasedCourses: parseList(get(row, ['SkillBasedCourses', 'Skill-Based'])),
+          abilityEnhancementCourses: parseList(get(row, ['AbilityEnhancementCourses', 'AEC'])),
+          valueAddedCourses: parseList(get(row, ['ValueAddedCourses', 'VAC'])),
+        };
+        const sid = sanitizeId(studentId);
+        uploads.push(setDoc(doc(studentsPublicRef, sid), studentDoc, { merge: true }));
+      });
+
+      // Upload classes (merge and dedupe students)
+      Object.keys(classesMap).forEach((clsName) => {
+        const cls = classesMap[clsName];
+        cls.students = Array.from(new Set(cls.students));
+        uploads.push(setDoc(doc(classPublicRef, cls.id), cls, { merge: true }));
+      });
+
+      await Promise.all(uploads);
+
+      // Refresh local classes from DB to include union of all
+      const classesSnap = await getDocs(classPublicRef);
+      const nextClasses = classesSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      setClasses(nextClasses);
+
+      // Auto-populate subjects for all classes using existing Courses dataset
+      try {
+        await autoPopulateSubjectsFromCourses();
+        showMessage('Students uploaded. Classes synced and subjects auto-assigned.', 'success');
+      } catch (e) {
+        console.error(e);
+        showMessage('Students uploaded. Failed to auto-assign subjects.', 'error');
       }
-    };
-  reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error('Error uploading students:', error);
+      showMessage(`Failed to upload students. Check the console for details: ${error.message}`, 'error');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Auto-populate class subjects from Courses dataset (by Program + Semester) and assign teachers heuristically
