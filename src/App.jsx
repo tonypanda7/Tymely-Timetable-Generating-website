@@ -1496,7 +1496,7 @@ export default function App() {
         let busy = false;
         for (const td of ttDocs) {
           const slot2 = td.table?.[c.dayIndex]?.[c.periodIndex];
-          if (slot2 && slot2.status !== 'free' && slot2.status !== 'break' && slot2.teacherId === tid) { busy = true; break; }
+          if (slot2 && slot2.status !== 'free' && slot2.status !== 'break' && normalizeId(slot2.teacherId) === normalizeId(tid)) { busy = true; break; }
         }
         if (!busy) {
           const nid = `offer_${c.className}_${c.dayIndex}_${c.periodIndex}_${tid}`;
