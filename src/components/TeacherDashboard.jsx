@@ -439,13 +439,15 @@ const TeacherDashboard = ({
 
               <div className="bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col">
                 <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-lg font-medium text-black">Timetable for {getWeekdayLabel(selectedDay)}</h3>
+                  <h3 className="text-lg font-medium text-black">Timetable for {getWeekdayLabel(selectedWeekdayIndex)}</h3>
                   <p className="text-sm text-gray-500">Your schedule for the day</p>
                 </div>
                 <div className="p-4 flex-1">
                   <div className="space-y-3">
-                    {Array.from({ length: Math.min(hoursPerDay, (computedTeacherTimetable[selectedDay] || []).length || hoursPerDay) }, (_, periodIdx) => {
-                      const slot = computedTeacherTimetable[selectedDay]?.[periodIdx];
+                    {isSelectedDayNoClasses ? (
+                      <div className="text-center text-black py-6">No classes on this day</div>
+                    ) : Array.from({ length: Math.min(hoursPerDay, (computedTeacherTimetable[selectedWeekdayIndex] || []).length || hoursPerDay) }, (_, periodIdx) => {
+                      const slot = computedTeacherTimetable[selectedWeekdayIndex]?.[periodIdx];
                       const descriptor = slotDescriptors[periodIdx];
                       const label =
                         descriptor?.originalLabel ||
