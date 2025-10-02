@@ -1311,6 +1311,21 @@ export default function App() {
         await setDoc(teacherRef, { hoursLeft: teacherHoursLeft[t.id] }, { merge: true });
       }
 
+      // Clear all notifications (teacher and student) and reset cancellations when a new timetable is generated
+      try {
+        const notificationsColRef = collection(db, "artifacts", appId, "public", "data", "notifications");
+        const notifSnap = await getDocs(notificationsColRef);
+        const deleteNotifOps = notifSnap.docs.map(nd => deleteDoc(doc(db, "artifacts", appId, "public", "data", "notifications", nd.id)));
+        await Promise.all(deleteNotifOps);
+
+        const cancellationsColRef = collection(db, "artifacts", appId, "public", "data", "cancellations");
+        const cancSnap = await getDocs(cancellationsColRef);
+        const deleteCancOps = cancSnap.docs.map(cd => deleteDoc(doc(db, "artifacts", appId, "public", "data", "cancellations", cd.id)));
+        await Promise.all(deleteCancOps);
+      } catch (cleanupErr) {
+        console.warn('Failed to clear notifications/cancellations after timetable generation', cleanupErr);
+      }
+
       showMessage("Timetable generated and saved successfully!", "success");
     } catch (error) {
       console.error("Error generating/saving timetable:", error);
