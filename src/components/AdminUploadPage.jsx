@@ -131,11 +131,14 @@ const AdminUploadPage = ({
           </div>
           <p className="upload-subtitle">Upload in Excel or CSV file</p>
         </div>
+        {uploadedNames[uploadType] && (
+          <div className="upload-filename">{uploadedNames[uploadType]}</div>
+        )}
         <input
           type="file"
           accept={accept}
           multiple
-          onChange={handler}
+          onChange={(e) => onFileSelect(uploadType, handler, e)}
           disabled={isUploading}
           className="file-input"
         />
