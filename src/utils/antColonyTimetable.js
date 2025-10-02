@@ -329,22 +329,37 @@ export function acGenerateTimetables({
       // Track teacher occupancy globally for this ant
       const teacherBusy = Array.from({ length: days }, () => ({}));
 
-      for (const cls of classes) {
-        const base = createBaseTable(days, hours, breaks, electives);
-        // Block elective teachers during elective periods for this class
-        const electiveTeachers = collectElectiveTeachers(cls);
-        if (electiveTeachers.size > 0 && electives.length > 0) {
-          for (let d = 0; d < days; d++) {
-            electives.forEach(p => {
-              if (!teacherBusy[d]) teacherBusy[d] = {};
-              if (!teacherBusy[d][p]) teacherBusy[d][p] = new Set();
-              electiveTeachers.forEach(tid => teacherBusy[d][p].add(tid));
-            });
+      // Helper: determine if a class should have elective periods (from its subjects or course catalog)
+        const hasElectiveForClass = (c) => {
+          try {
+            const subs = Array.isArray(c.subjects) ? c.subjects : [];
+            if (subs.some(s => s && s.courseType === 'elective')) return true;
+            const program = String(c.program || '');
+            const sem = Number(c.semester || c.sem || 0);
+            if (!program || !sem) return false;
+            return Object.values(courses || {}).some(x => String(x.program || '') === program && Number(x.semester || 0) === sem && /elective/i.test(String(x.category || '')));
+          } catch {
+            return false;
           }
-        }
-        const classMinCred = resolveMinCreditsForClass(cls, programs, courses, minCreditsMap);
-        const subjMeta = buildMetaForClassSubjects(cls, courseMetaByName);
-        const demand = buildDemandForClass(cls, days, hours, breaks, electives, classMinCred, subjMeta);
+        };
+
+        for (const cls of classes) {
+          const classElectives = hasElectiveForClass(cls) ? electives : [];
+          const base = createBaseTable(days, hours, breaks, classElectives);
+          // Block elective teachers during elective periods for this class
+          const electiveTeachers = collectElectiveTeachers(cls);
+          if (electiveTeachers.size > 0 && classElectives.length > 0) {
+            for (let d = 0; d < days; d++) {
+              classElectives.forEach(p => {
+                if (!teacherBusy[d]) teacherBusy[d] = {};
+                if (!teacherBusy[d][p]) teacherBusy[d][p] = new Set();
+                electiveTeachers.forEach(tid => teacherBusy[d][p].add(tid));
+              });
+            }
+          }
+          const classMinCred = resolveMinCreditsForClass(cls, programs, courses, minCreditsMap);
+          const subjMeta = buildMetaForClassSubjects(cls, courseMetaByName);
+          const demand = buildDemandForClass(cls, days, hours, breaks, classElectives, classMinCred, subjMeta);
 
         // Pre-select teacher for each demand item based on availability (hoursLeft ignored here; rely on conflict only)
         demand.forEach(item => {
