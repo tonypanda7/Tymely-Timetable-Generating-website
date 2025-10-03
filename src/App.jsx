@@ -2474,7 +2474,7 @@ export default function App() {
         <div className="admin-layout">
           <Sidebar currentView={currentView} onNavigate={setCurrentView} role={role} collegeId={collegeId} onLogout={backToLogin} />
           <main className="main-content">
-            <AdminMessagePage onSendMessage={sendAdminMessage} isSending={isSendingMessage} />
+            <AdminMessagePage onSendMessage={sendAdminMessage} isSending={isSendingMessage} classes={classes} />
           </main>
         </div>
       )}
