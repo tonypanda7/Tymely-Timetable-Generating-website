@@ -2482,6 +2482,8 @@ export default function App() {
               setClassDuration={setClassDuration}
               freePeriodNumber={freePeriodNumber}
               setFreePeriodNumber={setFreePeriodNumber}
+              lunchIndex={lunchIndex}
+              setLunchIndex={setLunchIndex}
 
               // Teacher hours bypass toggle
               bypassHoursCheck={bypassHoursCheck}
