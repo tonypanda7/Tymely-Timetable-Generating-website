@@ -359,6 +359,8 @@ export default function App() {
           setDayEndTime(settings.dayEndTime ?? "17:00");
           // Backwards compatible: prefer freePeriodNumber, fall back to freePeriodPercentage
           setFreePeriodNumber(settings.freePeriodNumber ?? settings.freePeriodPercentage ?? 5);
+          // lunchIndex may be null or a number
+          setLunchIndex(settings.lunchIndex == null ? null : Number(settings.lunchIndex));
           setBypassHoursCheck(Boolean(settings.bypassHoursCheck));
         }
         setGeneratedTimetables(timetableMap);
