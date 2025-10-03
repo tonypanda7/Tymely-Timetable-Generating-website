@@ -1027,8 +1027,8 @@ AdminUploadPage.propTypes = {
   setClassStartTime: PropTypes.func.isRequired,
   classDuration: PropTypes.number.isRequired,
   setClassDuration: PropTypes.func.isRequired,
-  freePeriodPercentage: PropTypes.number.isRequired,
-  setFreePeriodPercentage: PropTypes.func.isRequired,
+  freePeriodNumber: PropTypes.number.isRequired,
+  setFreePeriodNumber: PropTypes.func.isRequired,
 
   // Teacher hours bypass toggle
   bypassHoursCheck: PropTypes.bool.isRequired,
