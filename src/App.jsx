@@ -1661,10 +1661,8 @@ export default function App() {
     const morningBreakIndexDefault = Math.max(1, Math.floor(estimatedLunchIndex / 2));
     const afternoonBreakIndexDefault = Math.min(hours - 1, estimatedLunchIndex + Math.max(1, Math.floor((hours - estimatedLunchIndex) / 2)));
 
-    // compute estimated lunch start minute and clamp into allowed window
-    const estimatedLunchStart = startTimeMinutes + estimatedLunchIndex * classDur;
-    const lunchStart = Math.min(Math.max(estimatedLunchStart, lunchMinStart), lunchMaxStart);
-    const lunchEnd = lunchStart + lunchDuration;
+    // If explicit lunchIndex is provided, use it (must be between 0 and hours-1)
+    const explicitLunchIndex = (typeof timetableSettings?.lunchIndex === 'number') ? Number(timetableSettings.lunchIndex) : (typeof lunchIndex === 'number' ? Number(lunchIndex) : null);
 
     let current = startTimeMinutes;
     let placedLunch = false;
@@ -1674,15 +1672,38 @@ export default function App() {
       const isMorningBreak = !explicitBreaks && i === morningBreakIndexDefault;
       const isAfternoonBreak = !explicitBreaks && i === afternoonBreakIndexDefault;
 
-      // If lunch not yet placed and this slot would overlap lunch window OR we're at the estimated lunch index, place lunch
-      const wouldOverlapLunch = (current < lunchStart && (current + classDur) >= lunchStart) || (i === estimatedLunchIndex && !placedLunch);
-      if (!placedLunch && wouldOverlapLunch) {
-        const start = lunchStart;
-        const end = lunchEnd;
-        slots.push(`${format24(start)} - ${format24(end)} (LUNCH)`);
-        current = end;
-        placedLunch = true;
-        continue;
+      // If user specified explicit lunch index, place lunch exactly at that slot start (no gap)
+      if (explicitLunchIndex != null && i === explicitLunchIndex && !placedLunch) {
+        const start = current;
+        const end = start + lunchDuration;
+        // Validate that lunch fits inside configured lunch window
+        if (start < lunchMinStart || end > lunchWindowEnd) {
+          // invalid placement — show error and fall back to auto placement
+          try { showMessage(`Configured lunch index ${explicitLunchIndex} yields lunch at ${format24(start)}-${format24(end)}, which is outside allowed window 12:00-13:40. Using auto placement.`, 'error'); } catch {}
+        } else {
+          slots.push(`${format24(start)} - ${format24(end)} (LUNCH)`);
+          current = end;
+          placedLunch = true;
+          continue;
+        }
+      }
+
+      // Auto placement: place lunch at start of the slot when estimatedLunchIndex matches or when this slot would include the estimated lunch start
+      const estimatedLunchStart = startTimeMinutes + estimatedLunchIndex * classDur;
+      if (!placedLunch) {
+        const slotStart = current;
+        const slotEnd = current + classDur;
+        const shouldPlaceAuto = (i === estimatedLunchIndex) || (slotStart <= estimatedLunchStart && slotEnd > estimatedLunchStart);
+        if (shouldPlaceAuto) {
+          const start = slotStart;
+          const end = start + lunchDuration;
+          if (start >= lunchMinStart && end <= lunchWindowEnd) {
+            slots.push(`${format24(start)} - ${format24(end)} (LUNCH)`);
+            current = end;
+            placedLunch = true;
+            continue;
+          }
+        }
       }
 
       if (isExplicitBreak || isMorningBreak || isAfternoonBreak) {
