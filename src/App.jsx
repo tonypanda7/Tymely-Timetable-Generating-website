@@ -715,11 +715,11 @@ export default function App() {
       });
 
       const teachersPublicRef = collection(db, 'artifacts', appId, 'public', 'data', 'teachers');
-      const uploads = [];
+      const ops = [];
       uniqueById.forEach((teacher) => {
-        uploads.push(setDoc(doc(teachersPublicRef, teacher.id), teacher, { merge: true }));
+        ops.push({ ref: doc(teachersPublicRef, teacher.id), data: teacher });
       });
-      await Promise.all(uploads);
+      await commitBatchedSets(ops);
 
       // Refresh local state with full merged dataset
       const snap = await getDocs(teachersPublicRef);
