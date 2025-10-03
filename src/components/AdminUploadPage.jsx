@@ -34,8 +34,8 @@ const AdminUploadPage = ({
   setClassStartTime,
   classDuration,
   setClassDuration,
-  freePeriodPercentage,
-  setFreePeriodPercentage,
+  freePeriodNumber,
+  setFreePeriodNumber,
   // computed time slots from parent (may include LUNCH marker)
   timeSlots = [] ,
 
