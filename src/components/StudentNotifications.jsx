@@ -153,8 +153,16 @@ const StudentNotifications = ({
                   >
                     {notification.title}
                   </h3>
+                  {notification.message && (
+                    <p className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 400 }}>
+                      {notification.message}
+                    </p>
+                  )}
+                  {notification.imageData && (
+                    <div className="mt-1"><img src={notification.imageData} alt="Attachment" className="rounded-md border border-neutral-700 max-h-48" /></div>
+                  )}
                   <p
-                    className="text-white opacity-50 text-sm"
+                    className="text-white opacity-50 text-sm mt-2"
                     style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 500 }}
                   >
                     {notification.timestamp}

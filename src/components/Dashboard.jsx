@@ -32,6 +32,7 @@ const Dashboard = ({
   classes = [],
   teachers = [],
   studentNotifications = [],
+  teacherGeneralNotifications = [],
 }) => {
   const [selectedWeekDay, setSelectedWeekDay] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -346,6 +347,7 @@ const Dashboard = ({
           declineOffer={declineOffer}
           onNavigate={onNavigate}
           onLogout={onLogout}
+          teacherGeneralNotifications={teacherGeneralNotifications}
         />
       );
     }

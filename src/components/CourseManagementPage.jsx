@@ -10,7 +10,8 @@ const CourseManagementPage = ({
   collegeId,
   onDeleteSubject,
   teachers = [],
-  onAddSubject
+  onAddSubject,
+  programs = {}
 }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -90,6 +91,7 @@ const CourseManagementPage = ({
         <AddSubjectModal
           classes={classes}
           teachers={teachers}
+          programs={programs}
           onAddSubject={onAddSubject}
           onClose={() => setShowAddCourseModal(false)}
         />
@@ -560,7 +562,8 @@ CourseManagementPage.propTypes = {
   collegeId: PropTypes.string,
   onDeleteSubject: PropTypes.func,
   teachers: PropTypes.array,
-  onAddSubject: PropTypes.func
+  onAddSubject: PropTypes.func,
+  programs: PropTypes.object
 };
 
 export default CourseManagementPage;
