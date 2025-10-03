@@ -2401,6 +2401,7 @@ export default function App() {
             collegeId={collegeId}
             onDeleteSubject={handleDeleteSubject}
             teachers={teachers}
+            programs={programs}
             onAddSubject={async (className, subjectData) => {
               // Set the form state to match what handleSubjectAdd expects
               setSelectedClass(className);

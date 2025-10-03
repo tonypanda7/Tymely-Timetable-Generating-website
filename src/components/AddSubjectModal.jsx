@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 
-export default function AddSubjectModal({ classes = [], teachers = [], onAddSubject, onClose }) {
+export default function AddSubjectModal({ classes = [], teachers = [], programs = {}, onAddSubject, onClose }) {
   const [selectedClass, setSelectedClass] = useState('');
   const [subjectName, setSubjectName] = useState('');
   const [credits, setCredits] = useState(3);
@@ -9,11 +9,31 @@ export default function AddSubjectModal({ classes = [], teachers = [], onAddSubj
   const [subjectType, setSubjectType] = useState('theory');
   const [courseStyle, setCourseStyle] = useState('hard_theory');
   const [semester, setSemester] = useState(1);
+
+  const getMaxSemForSelected = () => {
+    try {
+      const cls = classes.find(c => c && c.name === selectedClass);
+      const prog = String(cls?.program || '');
+      const lim = Number(programs?.[prog]?.numSemesters);
+      if ([4, 6, 8].includes(lim)) return lim;
+      return 8;
+    } catch {
+      return 8;
+    }
+  };
+  const maxSem = getMaxSemForSelected();
   const [assignedTeachers, setAssignedTeachers] = useState([]);
 
   const handleAdd = async () => {
     if (!selectedClass || !subjectName || Number(credits) <= 0 || (!Array.isArray(assignedTeachers) || assignedTeachers.length === 0) ) {
       alert('Please fill all required fields');
+      return;
+    }
+
+    const maxAllowed = getMaxSemForSelected();
+    const semVal = Number(semester);
+    if (!(semVal >= 1 && semVal <= maxAllowed)) {
+      alert(`Semester must be between 1 and ${maxAllowed} for this program.`);
       return;
     }
 
@@ -122,14 +142,14 @@ export default function AddSubjectModal({ classes = [], teachers = [], onAddSubj
           </div>
 
           <div className="form-group">
-            <label className="form-label">Semester (1-8)</label>
+            <label className="form-label">Semester (1-{maxSem})</label>
             <input
               type="number"
               className="form-input"
               value={semester}
               onChange={(e) => setSemester(e.target.value === '' ? '' : Number(e.target.value))}
               min="1"
-              max="8"
+              max={maxSem}
             />
           </div>
 
