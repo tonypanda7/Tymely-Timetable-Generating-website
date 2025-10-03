@@ -481,9 +481,9 @@ const TeacherSchedulePage = ({
                     >
                       Classes Completed
                     </div>
-                    <div 
+                    <div
                       className="text-[#0A0A0A]"
-                      style={{ 
+                      style={{
                         fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif',
                         fontSize: '24px',
                         fontWeight: 500,
@@ -491,7 +491,7 @@ const TeacherSchedulePage = ({
                         letterSpacing: '0.07px'
                       }}
                     >
-                      {classesCompleted.completed}/{teacherStats.totalClasses}
+                      {teacherStats.totalClasses}/{totalScheduledBefore}
                     </div>
                   </div>
                 </div>
