@@ -1473,7 +1473,7 @@ export default function App() {
       programs,
       courses,
       courseRatings,
-      options: { ants: 40, iterations: 80, evaporation: 0.45, alpha: 1, beta: 3 }
+      options: { ants: 40, iterations: 80, evaporation: 0.45, alpha: 1, beta: 3, freePeriodNumber }
     });
 
     try {
