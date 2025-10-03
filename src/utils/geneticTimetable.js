@@ -78,7 +78,7 @@ function buildSubjectPool(cls, teachingSlots, freeNum) {
   return pool;
 }
 
-function initializeChromosome(classes, teachers, days, hours, breakSlots, freePercent) {
+function initializeChromosome(classes, teachers, days, hours, breakSlots, freeNum) {
   const chromosome = {};
   const teacherHoursLeft = {};
   teachers.forEach(t => { teacherHoursLeft[t.id] = Number(t.weeklyRequiredHours || 0); });
