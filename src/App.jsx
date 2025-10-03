@@ -161,6 +161,8 @@ export default function App() {
   const [dayEndTime, setDayEndTime] = useState("17:00");
   const [timetableSettings, setTimetableSettings] = useState(null);
   const [electiveSlots, setElectiveSlots] = useState([]);
+  // Optional explicit lunch index (0-based). null = auto
+  const [lunchIndex, setLunchIndex] = useState(null);
 
   // Demo: allow auto-login via URL query `as=admin_ID` or `as=admin_ID` or `as=admin:ID` for screenshots
   const autoLoginAppliedRef = useRef(false);
