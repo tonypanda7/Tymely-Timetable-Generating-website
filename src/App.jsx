@@ -1632,13 +1632,13 @@ export default function App() {
     };
 
     const startTimeMinutes = parseTime(typeof dst === 'string' && dst ? dst : (typeof cst === 'string' && cst ? cst : '09:00'));
-    const lunchWindowStart = 12 * 60; // earliest lunch start 12:00
-    const lunchWindowEnd = 13 * 60 + 40; // latest lunch end 13:40
-    const lunchMinStart = lunchWindowStart; // 720
-    const lunchMaxStart = lunchWindowEnd - 60; // latest start so 60-min lunch fits (760 = 12:40)
-    const lunchDuration = 60; // one hour lunch
-    const morningBreakDuration = 20;
-    const afternoonBreakDuration = 20;
+    const lunchWindowStart = LUNCH_WINDOW_START;
+    const lunchWindowEnd = LUNCH_WINDOW_END;
+    const lunchMinStart = lunchWindowStart;
+    const lunchMaxStart = lunchWindowEnd - LUNCH_DURATION;
+    const lunchDuration = LUNCH_DURATION;
+    const morningBreakDuration = BREAK_DURATION;
+    const afternoonBreakDuration = BREAK_DURATION;
 
     const slots = [];
 
