@@ -366,12 +366,12 @@ const AdminUploadPage = ({
               />
               
               <TextInput
-                label="Free Period %:"
+                label="Free Periods (per week):"
                 id="free-period"
                 type="number"
                 value={freePeriodPercentage}
                 onChange={setFreePeriodPercentage}
-                placeholder="20"
+                placeholder="5"
               />
             </div>
 
