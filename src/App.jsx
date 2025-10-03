@@ -1479,7 +1479,8 @@ export default function App() {
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
       await setDoc(settingsRef, {
-        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodPercentage
+        workingDays, hoursPerDay, breakSlots, electiveSlots, classStartTime, classDuration, dayStartTime, dayEndTime, freePeriodNumber,
+        freePeriodPercentage: freePeriodNumber
       }, { merge: true });
 
       // Remove timetables that are no longer eligible (outside NumSemesters) before writing new ones
