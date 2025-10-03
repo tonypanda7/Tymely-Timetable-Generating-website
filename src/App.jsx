@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager
+  initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
 import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
