@@ -8,6 +8,7 @@ export default function AdminMessagePage({ onSendMessage, isSending, classes = [
   const [message, setMessage] = useState('');
   const [imageData, setImageData] = useState('');
   const [selectedClasses, setSelectedClasses] = useState([]);
+  const [allStudents, setAllStudents] = useState(true);
 
   const handleImageChange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -51,18 +52,33 @@ export default function AdminMessagePage({ onSendMessage, isSending, classes = [
 
         {audienceStudents && (
           <div className="form-row">
-            <label className="form-label">Target Classes (optional)</label>
-            <select
-              multiple
-              className="form-input"
-              value={selectedClasses}
-              onChange={(e) => setSelectedClasses(Array.from(e.target.selectedOptions, o => o.value))}
-            >
-              {classes.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-            <div className="form-helper">Leave empty to message all students.</div>
+            <label className="form-label">Students</label>
+            <div className="audience-options">
+              <label className="audience-option">
+                <input
+                  type="checkbox"
+                  checked={allStudents}
+                  onChange={(e) => { setAllStudents(e.target.checked); if (e.target.checked) setSelectedClasses([]); }}
+                /> All students
+              </label>
+            </div>
+            {!allStudents && (
+              <>
+                <label className="form-label">Target Classes</label>
+                <select
+                  multiple
+                  className="form-input"
+                  value={selectedClasses}
+                  onChange={(e) => setSelectedClasses(Array.from(e.target.selectedOptions, o => o.value))}
+                >
+                  {classes.map((c) => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+                <div className="form-helper">Select one or more classes.</div>
+              </>
+            )}
+            {allStudents && <div className="form-helper">Broadcasting to all students.</div>}
           </div>
         )}
 
