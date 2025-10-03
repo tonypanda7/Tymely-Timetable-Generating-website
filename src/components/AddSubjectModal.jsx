@@ -212,6 +212,7 @@ export default function AddSubjectModal({ classes = [], teachers = [], programs 
 AddSubjectModal.propTypes = {
   classes: PropTypes.array,
   teachers: PropTypes.array,
+  programs: PropTypes.object,
   onAddSubject: PropTypes.func,
   onClose: PropTypes.func
 };
