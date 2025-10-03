@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-export default function AdminMessagePage({ onSendMessage, isSending }) {
+export default function AdminMessagePage({ onSendMessage, isSending, classes = [] }) {
   const [audienceTeachers, setAudienceTeachers] = useState(true);
   const [audienceStudents, setAudienceStudents] = useState(true);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [imageData, setImageData] = useState('');
+  const [selectedClasses, setSelectedClasses] = useState([]);
 
   const handleImageChange = (e) => {
     const file = e.target.files && e.target.files[0];
@@ -24,8 +25,8 @@ export default function AdminMessagePage({ onSendMessage, isSending }) {
     if (targets.length === 0) { alert('Select at least one audience'); return; }
     if (!title && !message && !imageData) { alert('Provide a title, message, or image'); return; }
     if (onSendMessage) {
-      await onSendMessage({ title, message, imageData, audiences: targets });
-      setTitle(''); setMessage(''); setImageData('');
+      await onSendMessage({ title, message, imageData, audiences: targets, classes: selectedClasses });
+      setTitle(''); setMessage(''); setImageData(''); setSelectedClasses([]);
     }
   };
 
@@ -47,6 +48,23 @@ export default function AdminMessagePage({ onSendMessage, isSending }) {
             </label>
           </div>
         </div>
+
+        {audienceStudents && (
+          <div className="form-row">
+            <label className="form-label">Target Classes (optional)</label>
+            <select
+              multiple
+              className="form-input"
+              value={selectedClasses}
+              onChange={(e) => setSelectedClasses(Array.from(e.target.selectedOptions, o => o.value))}
+            >
+              {classes.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <div className="form-helper">Leave empty to message all students.</div>
+          </div>
+        )}
 
         <div className="form-row">
           <label className="form-label">Title</label>
@@ -89,6 +107,7 @@ export default function AdminMessagePage({ onSendMessage, isSending }) {
         .btn-primary:hover { background: #2563eb; }
         .image-preview { margin-top: 10px; }
         .image-preview img { max-width: 240px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .form-helper { font-family: 'Inter', sans-serif; font-size: 12px; color: #666; margin-top: 6px; }
         @media (max-width: 1024px) { .admin-message-page { margin-left: 0; padding: 1rem; } }
       `}</style>
     </div>
@@ -98,4 +117,5 @@ export default function AdminMessagePage({ onSendMessage, isSending }) {
 AdminMessagePage.propTypes = {
   onSendMessage: PropTypes.func,
   isSending: PropTypes.bool,
+  classes: PropTypes.array,
 };
