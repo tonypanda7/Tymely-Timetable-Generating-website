@@ -3157,8 +3157,8 @@ export default function App() {
                 <input type="text" value={(electiveSlots || []).join(',')} onChange={e => setElectiveSlots(e.target.value.split(',').map(s => Number(s.trim())).filter(n => Number.isFinite(n)))} className="w-full sm:w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <label className="text-sm font-medium">Free Period %:</label>
-                <input type="number" value={freePeriodPercentage} onChange={e => setFreePeriodPercentage(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" max="100" />
+                <label className="text-sm font-medium">Free Periods (min):</label>
+                <input type="number" value={freePeriodNumber} onChange={e => setFreePeriodNumber(Number(e.target.value))} className="w-24 p-2 rounded-lg bg-neutral-700 text-white border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" />
               </div>
             </div>
             <div className="mt-4">
