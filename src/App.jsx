@@ -2476,8 +2476,8 @@ export default function App() {
               setClassStartTime={setClassStartTime}
               classDuration={classDuration}
               setClassDuration={setClassDuration}
-              freePeriodPercentage={freePeriodPercentage}
-              setFreePeriodPercentage={setFreePeriodPercentage}
+              freePeriodNumber={freePeriodNumber}
+              setFreePeriodNumber={setFreePeriodNumber}
 
               // Teacher hours bypass toggle
               bypassHoursCheck={bypassHoursCheck}
