@@ -647,6 +647,24 @@ export default function App() {
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
 
+  // Helper: commit many set operations in Firestore batches (chunks of 450 to stay under limits)
+  const commitBatchedSets = async (ops, chunkSize = 450) => {
+    if (!Array.isArray(ops) || ops.length === 0) return;
+    for (let i = 0; i < ops.length; i += chunkSize) {
+      const slice = ops.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      slice.forEach(({ ref, data }) => {
+        try {
+          batch.set(ref, data, { merge: true });
+        } catch (err) {
+          // fallback: ignore; set may fail if invalid
+          console.error('Batch set error for ref', ref, err);
+        }
+      });
+      await batch.commit();
+    }
+  };
+
   const handleTeacherCSV = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) { showMessage("No file selected.", "error"); return; }
