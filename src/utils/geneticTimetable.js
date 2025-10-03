@@ -42,10 +42,11 @@ function computeTeacherUsage(timetables) {
 
 function randomChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function buildSubjectPool(cls, teachingSlots, freePercent) {
+function buildSubjectPool(cls, teachingSlots, freeNum) {
   const breaksPerDay = 0; // handled outside
-  const nonBreakSlots = teachingSlots; // already excludes breaks
-  const freeSlots = Math.round((freePercent / 100) * nonBreakSlots);
+  const nonBreakSlots = teachingSlots; // already excludes breaks (this is per-week number)
+  const desiredFree = Number(freeNum) || 0;
+  const freeSlots = Math.min(nonBreakSlots, desiredFree);
   const nonFreeSlots = Math.max(0, nonBreakSlots - freeSlots);
 
   const subjects = Array.isArray(cls.subjects) ? cls.subjects : [];
