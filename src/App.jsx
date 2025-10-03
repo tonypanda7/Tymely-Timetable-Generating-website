@@ -9,6 +9,7 @@ import { initializeApp } from "firebase/app";
 import SignInPage from './components/SignInPage.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import AdminUploadPage from './components/AdminUploadPage.jsx';
+import AdminMessagePage from './components/AdminMessagePage.jsx';
 import CourseManagementPage from './components/CourseManagementPage.jsx';
 import AdminTeacherTimetablePage from './components/AdminTeacherTimetablePage.jsx';
 import AdminStudentTimetablePage from './components/AdminStudentTimetablePage.jsx';
@@ -217,6 +218,8 @@ export default function App() {
   const [cancellations, setCancellations] = useState([]);
   const [teacherOffers, setTeacherOffers] = useState([]);
   const [acceptedSubstitutions, setAcceptedSubstitutions] = useState([]);
+  const [teacherNotifDocs, setTeacherNotifDocs] = useState([]);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [studentNotifDocs, setStudentNotifDocs] = useState([]);
 
   // Programs, Courses, Ratings
@@ -445,6 +448,7 @@ export default function App() {
         setTeacherOffers(items.filter(n => (n.type === 'substitution_offer' && n.candidateId === collegeId && n.status === 'pending') || (n.type === 'cancellation_approved' && n.candidateId === collegeId)));
         setAcceptedSubstitutions(items.filter(n => n.type === 'substitution_offer' && n.status === 'accepted'));
         setStudentNotifDocs(items.filter(n => String(n.forRole || '').toLowerCase() === 'student'));
+        setTeacherNotifDocs(items.filter(n => String(n.forRole || '').toLowerCase() === 'teacher'));
       }, onErr('notifications'));
 
       // Student electives listener
@@ -1902,6 +1906,23 @@ export default function App() {
     showMessage(`Timetable downloaded as ${format.toUpperCase()}!`, 'success');
   };
 
+  const teacherGeneralNotifications = useMemo(() => {
+    try {
+      const fmt = (ts) => new Date(Number(ts || Date.now())).toLocaleString();
+      return (Array.isArray(teacherNotifDocs) ? teacherNotifDocs : [])
+        .filter(n => (String(n.type || '').toLowerCase() === 'admin_message') || n.title || n.message)
+        .map((n) => ({
+          id: `tmsg_${n.id}`,
+          title: n.title || 'Message',
+          description: String(n.message || ''),
+          imageData: n.imageData || '',
+          createdAt: Number(n.createdAt || Date.now()),
+          timestamp: fmt(n.createdAt || Date.now()),
+        }))
+        .sort((a,b)=> b.createdAt - a.createdAt);
+    } catch { return []; }
+  }, [teacherNotifDocs]);
+
   const studentNotifications = useMemo(() => {
     const results = [];
     try {
@@ -1935,15 +1956,15 @@ export default function App() {
       // Include any explicit student-targeted notifications from notifications collection
       (Array.isArray(studentNotifDocs) ? studentNotifDocs : []).forEach((n) => {
         try {
-          if (!studentClass || String(n.className) !== String(studentClass)) return;
+          if (n.className && studentClass && String(n.className) !== String(studentClass)) return;
           const t = String(n.type || '').toLowerCase();
-          if (t === 'cancellation_for_students' || t === 'cancellation_for_students') {
+          if (t === 'cancellation_for_students') {
             results.push({ id: `snotif_${n.id}`, title: `Class cancelled: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)})`, timestamp: fmt(n.createdAt), read: false });
-          } else if (t === 'substitution_for_students' || t === 'substitution_for_students') {
+          } else if (t === 'substitution_for_students') {
             const tName = (teachers.find(t2 => t2.id === n.candidateId)?.name) || n.candidateId || 'Teacher';
             results.push({ id: `snotif_${n.id}`, title: `Substitution: ${n.subjectName} on ${dayLabel(n.dayIndex)} (${periodLabel(n.periodIndex)}) will be taken by ${tName}`, timestamp: fmt(n.actedAt || n.createdAt), read: false });
-          } else if (n.title || n.message) {
-            results.push({ id: `snotif_${n.id}`, title: n.title || String(n.message || ''), timestamp: fmt(n.createdAt || n.actedAt), read: false });
+          } else if (t === 'admin_message' || n.title || n.message) {
+            results.push({ id: `snotif_${n.id}`, title: n.title || 'Message', message: String(n.message || ''), imageData: n.imageData || '', timestamp: fmt(n.createdAt || n.actedAt), read: false });
           }
         } catch (e) {}
       });
@@ -2287,6 +2308,27 @@ export default function App() {
     });
   };
 
+  const sendAdminMessage = async ({ title, message, imageData, audiences }) => {
+    if (!db) { showMessage('Database not ready.', 'error'); return; }
+    setIsSendingMessage(true);
+    try {
+      const base = collection(db, 'artifacts', appId, 'public', 'data', 'notifications');
+      const now = Date.now();
+      const ops = [];
+      (audiences || []).forEach((r) => {
+        const id = `admin_${r}_${now}_${Math.random().toString(36).slice(2,8)}`;
+        ops.push(setDoc(doc(base, id), { type: 'admin_message', forRole: r, title: String(title || ''), message: String(message || ''), imageData: String(imageData || ''), createdAt: now, createdBy: collegeId }));
+      });
+      await Promise.all(ops);
+      showMessage('Message sent.', 'success');
+    } catch (e) {
+      console.error(e);
+      showMessage('Failed to send message.', 'error');
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
   const portalSurfaceClass = role === 'teacher' || role === 'student' ? 'bg-white text-black' : 'bg-neutral-900 text-white';
 
   return (
@@ -2425,6 +2467,15 @@ export default function App() {
               background: #fff;
             }
           `}</style>
+        </div>
+      )}
+
+      {role === "admin" && currentView === 'admin-message' && (
+        <div className="admin-layout">
+          <Sidebar currentView={currentView} onNavigate={setCurrentView} role={role} collegeId={collegeId} onLogout={backToLogin} />
+          <main className="main-content">
+            <AdminMessagePage onSendMessage={sendAdminMessage} isSending={isSendingMessage} />
+          </main>
         </div>
       )}
 
@@ -3216,6 +3267,7 @@ export default function App() {
           classes={classes}
           studentNotifications={studentNotifications}
           teachers={teachers}
+          teacherGeneralNotifications={teacherGeneralNotifications}
         />
       )}
 

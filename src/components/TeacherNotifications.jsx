@@ -44,6 +44,7 @@ const TeacherNotifications = ({
   declineOffer,
   onNavigate,
   onLogout,
+  teacherGeneralNotifications = [],
 }) => {
   const sentNotifications = useMemo(() => {
     const items = Array.isArray(teacherCancellations) ? teacherCancellations : [];
@@ -207,6 +208,39 @@ const TeacherNotifications = ({
         </header>
 
         <div className="notifications-grid">
+          <section className="notifications-column">
+            <div className="notifications-column__header">
+              <h2 className="notifications-column__title">Announcements</h2>
+              <p className="notifications-column__subtitle">Messages from admin</p>
+            </div>
+            <div className="notifications-list">
+              {Array.isArray(teacherGeneralNotifications) && teacherGeneralNotifications.length > 0 ? teacherGeneralNotifications.map((n) => (
+                <div key={n.id} className="notification-card">
+                  <div className="notification-card__header">
+                    <div className="notification-card__content">
+                      <div className="notification-card__icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21 15V5C21 3.89543 20.1046 3 19 3H5C3.89543 3 3 3.89543 3 5V15C3 16.1046 3.89543 17 5 17H17L21 21V15Z" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <div className="notification-card__text">
+                        <h3 className="notification-card__title">{n.title}</h3>
+                        {n.description && <p className="notification-card__description">{n.description}</p>}
+                        {n.imageData && (
+                          <div className="admin-image">
+                            <img src={n.imageData} alt="Attachment" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-gray-600">No announcements.</div>
+              )}
+            </div>
+          </section>
+
           <section className="notifications-column">
             <div className="notifications-column__header">
               <h2 className="notifications-column__title">Sent</h2>
@@ -587,6 +621,7 @@ const TeacherNotifications = ({
             align-self: flex-end;
           }
         }
+        .admin-image img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); margin-top: 8px; }
       `}</style>
     </div>
   );
@@ -599,6 +634,7 @@ TeacherNotifications.propTypes = {
   declineOffer: PropTypes.func,
   onNavigate: PropTypes.func,
   onLogout: PropTypes.func,
+  teacherGeneralNotifications: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, title: PropTypes.string, description: PropTypes.string, imageData: PropTypes.string })),
 };
 
 export default TeacherNotifications;
