@@ -1934,7 +1934,17 @@ export default function App() {
     try {
       const fmt = (ts) => new Date(Number(ts || Date.now())).toLocaleString();
       return (Array.isArray(teacherNotifDocs) ? teacherNotifDocs : [])
-        .filter(n => (String(n.type || '').toLowerCase() === 'admin_message') || n.title || n.message)
+        // Show only admin messages or general messages — exclude cancellation approvals/offers which should appear under 'Received'
+        .filter(n => {
+          const t = String(n.type || '').toLowerCase();
+          if (t === 'admin_message') return true;
+          // have title/message but exclude specific workflow notifications
+          if (n.title || n.message) {
+            if (['cancellation_approved', 'substitution_offer', 'cancellation_for_students'].includes(t)) return false;
+            return true;
+          }
+          return false;
+        })
         .map((n) => ({
           id: `tmsg_${n.id}`,
           title: n.title || 'Message',
