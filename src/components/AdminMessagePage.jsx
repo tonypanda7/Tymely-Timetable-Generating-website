@@ -111,7 +111,7 @@ export default function AdminMessagePage({ onSendMessage, isSending, classes = [
         .admin-message-page { min-height: 100vh; background: #fff; padding: 2rem; margin-left: 211px; }
         .page-header { margin-bottom: 2rem; }
         .page-title { font-family: 'Roboto Condensed', sans-serif; font-size: 50px; font-weight: 600; color: #000; margin: 0; }
-        .message-form { max-width: 800px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+        .message-form { max-width: 1100px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
         .form-row { margin-bottom: 16px; }
         .form-label { display: block; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: #0F172A; margin-bottom: 8px; }
         .form-input { width: 100%; height: 41px; border-radius: 8px; background: #fff; box-shadow: 4px 4px 50px 1px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb; padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 16px; color: #0F172A; outline: none; }

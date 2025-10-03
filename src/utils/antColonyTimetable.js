@@ -87,11 +87,13 @@ function addRatingsToMeta(byName, ratings) {
   return out;
 }
 
-function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices, minCreditsForProgram, subjMeta) {
+function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices, minCreditsForProgram, subjMeta, reservedFreePerWeek) {
   const perDayBreaks = (breakSlots || []).length;
   const electivePerDay = (electivePeriodIndices || []).length;
   const usablePerDay = hours - perDayBreaks - electivePerDay;
-  const totalUsable = days * Math.max(0, usablePerDay);
+  const totalCapacity = days * Math.max(0, usablePerDay);
+  const reservedFree = Math.max(0, Math.min(Number(reservedFreePerWeek || 0), totalCapacity));
+  const totalUsable = Math.max(0, totalCapacity - reservedFree);
 
   const minReq = Number(minCreditsForProgram || 0);
   // Exclude elective groups from regular demand allocation; elective periods are handled separately
@@ -300,6 +302,7 @@ export function acGenerateTimetables({
   const evaporation = options.evaporation != null ? options.evaporation : 0.5;
   const alpha = options.alpha != null ? options.alpha : 1; // pheromone influence
   const beta = options.beta != null ? options.beta : 3; // heuristic influence
+  const minFree = clamp(Number(options.minFreePeriodsPerWeek || 0), 0, days * Math.max(0, hours - breaks.length));
 
   const teacherIds = new Set(teachers.map(t => t.id));
 
@@ -359,7 +362,7 @@ export function acGenerateTimetables({
           }
           const classMinCred = resolveMinCreditsForClass(cls, programs, courses, minCreditsMap);
           const subjMeta = buildMetaForClassSubjects(cls, courseMetaByName);
-          const demand = buildDemandForClass(cls, days, hours, breaks, classElectives, classMinCred, subjMeta);
+          const demand = buildDemandForClass(cls, days, hours, breaks, classElectives, classMinCred, subjMeta, minFree);
 
         // Pre-select teacher for each demand item based on availability (hoursLeft ignored here; rely on conflict only)
         demand.forEach(item => {
