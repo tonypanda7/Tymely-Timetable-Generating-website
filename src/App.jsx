@@ -2308,7 +2308,7 @@ export default function App() {
     });
   };
 
-  const sendAdminMessage = async ({ title, message, imageData, audiences }) => {
+  const sendAdminMessage = async ({ title, message, imageData, audiences, classes: targetClasses = [] }) => {
     if (!db) { showMessage('Database not ready.', 'error'); return; }
     setIsSendingMessage(true);
     try {
@@ -2316,8 +2316,15 @@ export default function App() {
       const now = Date.now();
       const ops = [];
       (audiences || []).forEach((r) => {
-        const id = `admin_${r}_${now}_${Math.random().toString(36).slice(2,8)}`;
-        ops.push(setDoc(doc(base, id), { type: 'admin_message', forRole: r, title: String(title || ''), message: String(message || ''), imageData: String(imageData || ''), createdAt: now, createdBy: collegeId }));
+        if (r === 'student' && Array.isArray(targetClasses) && targetClasses.length > 0) {
+          targetClasses.forEach((clsName) => {
+            const id = `admin_${r}_${sanitizeId(clsName)}_${now}_${Math.random().toString(36).slice(2,8)}`;
+            ops.push(setDoc(doc(base, id), { type: 'admin_message', forRole: r, className: String(clsName), title: String(title || ''), message: String(message || ''), imageData: String(imageData || ''), createdAt: now, createdBy: collegeId }));
+          });
+        } else {
+          const id = `admin_${r}_${now}_${Math.random().toString(36).slice(2,8)}`;
+          ops.push(setDoc(doc(base, id), { type: 'admin_message', forRole: r, title: String(title || ''), message: String(message || ''), imageData: String(imageData || ''), createdAt: now, createdBy: collegeId }));
+        }
       });
       await Promise.all(ops);
       showMessage('Message sent.', 'success');
