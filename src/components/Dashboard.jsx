@@ -347,6 +347,7 @@ const Dashboard = ({
           declineOffer={declineOffer}
           onNavigate={onNavigate}
           onLogout={onLogout}
+          teacherGeneralNotifications={teacherGeneralNotifications}
         />
       );
     }
