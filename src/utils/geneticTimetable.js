@@ -319,7 +319,7 @@ export function geneticGenerateTimetables({ classes = [], teachers = [], working
   // Initialize population
   const population = [];
   for (let i = 0; i < populationSize; i++) {
-    population.push(initializeChromosome(classes, teachers, days, hours, breaks, freePeriodPercentage));
+    population.push(initializeChromosome(classes, teachers, days, hours, breaks, freePeriodNumber));
   }
 
   // Evolve
