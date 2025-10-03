@@ -2128,7 +2128,7 @@ export default function App() {
         }
       }
 
-      const opts = { ants: 30, iterations: 60, evaporation: 0.45, alpha: 1, beta: 3 };
+      const opts = { ants: 30, iterations: 60, evaporation: 0.45, alpha: 1, beta: 3, freePeriodNumber };
 
       let programsForGen = programs;
       if (scenarioType === 'more_free') {
