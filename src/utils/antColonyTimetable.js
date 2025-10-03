@@ -361,7 +361,7 @@ export function acGenerateTimetables({
           }
           const classMinCred = resolveMinCreditsForClass(cls, programs, courses, minCreditsMap);
           const subjMeta = buildMetaForClassSubjects(cls, courseMetaByName);
-          const demand = buildDemandForClass(cls, days, hours, breaks, classElectives, classMinCred, subjMeta);
+          const demand = buildDemandForClass(cls, days, hours, breaks, classElectives, classMinCred, subjMeta, options.freePeriodNumber || 0);
 
         // Pre-select teacher for each demand item based on availability (hoursLeft ignored here; rely on conflict only)
         demand.forEach(item => {
