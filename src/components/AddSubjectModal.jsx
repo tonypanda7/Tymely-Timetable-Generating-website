@@ -16,6 +16,17 @@ export default function AddSubjectModal({ classes = [], teachers = [], programs 
       const prog = String(cls?.program || '');
       const lim = Number(programs?.[prog]?.numSemesters);
       if ([4, 6, 8].includes(lim)) return lim;
+      // Fallback: derive from existing classes for the same program, then map to {4,6,8} ceiling
+      const observed = Math.max(
+        0,
+        ...classes
+          .filter(c => String(c?.program || '') === prog)
+          .map(c => Number(c?.semester ?? c?.sem ?? 0))
+          .filter(n => Number.isFinite(n))
+      );
+      if (observed <= 0) return 8;
+      if (observed <= 4) return 4;
+      if (observed <= 6) return 6;
       return 8;
     } catch {
       return 8;
