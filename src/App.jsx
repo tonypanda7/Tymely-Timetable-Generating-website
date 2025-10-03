@@ -1336,8 +1336,8 @@ export default function App() {
           const toMin = (s) => { const [h, mm] = s.split(':').map(Number); return h * 60 + mm; };
           const start = toMin(m[1]);
           const end = toMin(m[2]);
-          const earliest = 12 * 60; // 12:00
-          const latestEnd = 13 * 60 + 40; // 13:40
+          const earliest = LUNCH_WINDOW_START; // 12:00
+          const latestEnd = LUNCH_WINDOW_END; // 13:40
           if (start < earliest || end > latestEnd) {
             showMessage(`Computed lunch slot (${label}) must be between 12:00 and 13:40. Adjust class times or duration.`, 'error');
             return;
