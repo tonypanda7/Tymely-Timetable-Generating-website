@@ -119,9 +119,34 @@ const TeacherSchedulePage = ({
     return { completed, total };
   }, [teacherTimetable, renderTimeSlots, periodCount, workingDays]);
 
+  // Total scheduled for this teacher BEFORE cancellations (from generatedTimetables)
+  const totalScheduledBefore = useMemo(() => {
+    let total = 0;
+    try {
+      Object.values(generatedTimetables || {}).forEach((table) => {
+        if (!Array.isArray(table)) return;
+        for (let d = 0; d < table.length; d++) {
+          const row = Array.isArray(table[d]) ? table[d] : [];
+          for (let p = 0; p < row.length; p++) {
+            const cell = row[p];
+            if (!cell) continue;
+            const subj = String(cell.subjectName || '');
+            const isBreak = cell.status === 'break' || /break|lunch/i.test(subj);
+            const isFree = cell.status === 'free' || subj === 'Free';
+            if (isBreak || isFree) continue;
+            if (String(cell.teacherId || '') === String(collegeId || '')) total++;
+          }
+        }
+      });
+    } catch (e) {}
+    return total;
+  }, [generatedTimetables, collegeId]);
+
   const progressPercent = useMemo(() => {
-    return teacherStats.totalClasses > 0 ? Math.min(100, Math.round((classesCompleted.completed / teacherStats.totalClasses) * 100)) : 0;
-  }, [classesCompleted, teacherStats]);
+    const after = Math.max(0, Number(teacherStats.totalClasses || 0));
+    const before = Math.max(0, Number(totalScheduledBefore || 0));
+    return before > 0 ? Math.min(100, Math.round((after / before) * 100)) : 0;
+  }, [teacherStats, totalScheduledBefore]);
 
   const days = daysLabels;
 
