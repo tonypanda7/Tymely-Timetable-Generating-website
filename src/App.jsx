@@ -1613,7 +1613,7 @@ export default function App() {
   };
 
   const calculateTimeSlots = () => {
-    // Generate a detailed slot list including two 20-min breaks (morning & after lunch) and lunch fixed at 12:00-13:40.
+    // Build slots so that Lunch occupies a fixed period index where the previous class ends within 12:00–13:00 and lunch runs within 12:00–13:40. No gaps.
     const settings = timetableSettings || { hoursPerDay, classStartTime, classDuration, breakSlots, dayStartTime };
     const { hoursPerDay: hpd, classStartTime: cst, classDuration: dur, breakSlots: brks, dayStartTime: dst } = settings;
     const hours = Number(hpd || hoursPerDay || 0);
@@ -1632,53 +1632,62 @@ export default function App() {
     };
 
     const startTimeMinutes = parseTime(typeof dst === 'string' && dst ? dst : (typeof cst === 'string' && cst ? cst : '09:00'));
-    const lunchWindowStart = LUNCH_WINDOW_START;
-    const lunchWindowEnd = LUNCH_WINDOW_END;
-    const lunchMinStart = lunchWindowStart;
-    const lunchMaxStart = lunchWindowEnd - LUNCH_DURATION;
+    const lunchMinStart = LUNCH_WINDOW_START; // 12:00
+    const lunchMaxStart = LUNCH_WINDOW_END - LUNCH_DURATION; // 12:40 when lunch=60m
     const lunchDuration = LUNCH_DURATION;
-    const morningBreakDuration = BREAK_DURATION;
-    const afternoonBreakDuration = BREAK_DURATION;
+    const breakDuration = BREAK_DURATION;
 
-    const slots = [];
-
-    // Respect explicit breaks if provided, otherwise compute sensible defaults
     const explicitBreaks = Array.isArray(brks) && brks.length ? brks.slice() : null;
 
-    // Estimate where lunch should go relative to start
-    let estimatedLunchIndex = Math.max(0, Math.round((lunchWindowStart - startTimeMinutes) / classDur));
-    estimatedLunchIndex = Math.min(Math.max(1, estimatedLunchIndex), Math.max(1, hours - 2));
+    // Decide lunch index L so that the time just before L (end of previous class) lies within [12:00, 12:40]
+    const chooseLunchIndex = () => {
+      let bestIdx = -1;
+      let bestDelta = Infinity;
+      for (let i = 1; i < hours; i++) { // at least one class before lunch
+        // Predict morning break index if not explicitly provided (placed before lunch roughly mid-morning)
+        const defaultMorningBreak = Math.max(1, Math.floor(i / 2));
+        const breaksBefore = explicitBreaks ? (explicitBreaks.filter(b => b < i).length) : (defaultMorningBreak < i ? 1 : 0);
+        const classesBefore = i - breaksBefore; // lunch occupies one slot at index i
+        const prevEnd = startTimeMinutes + classesBefore * classDur + breaksBefore * breakDuration;
+        if (prevEnd >= lunchMinStart && prevEnd <= lunchMaxStart) {
+          const delta = Math.abs(prevEnd - lunchMinStart);
+          if (delta < bestDelta) { bestDelta = delta; bestIdx = i; }
+        }
+      }
+      if (bestIdx >= 0) return bestIdx;
+      // Fallback: nearest index to 12:00 within bounds
+      let est = Math.max(1, Math.round((lunchMinStart - startTimeMinutes) / classDur));
+      est = Math.min(est, Math.max(1, hours - 2));
+      return est;
+    };
 
-    const morningBreakIndexDefault = Math.max(1, Math.floor(estimatedLunchIndex / 2));
-    const afternoonBreakIndexDefault = Math.min(hours - 1, estimatedLunchIndex + Math.max(1, Math.floor((hours - estimatedLunchIndex) / 2)));
+    const lunchIndex = chooseLunchIndex();
+    // Compute default breaks relative to chosen lunch index when not explicitly provided
+    const morningBreakIndexDefault = !explicitBreaks ? Math.max(1, Math.floor(lunchIndex / 2)) : -1;
+    const afternoonBreakIndexDefault = !explicitBreaks ? Math.min(hours - 1, lunchIndex + Math.max(1, Math.floor((hours - lunchIndex) / 2))) : -1;
 
-    // compute estimated lunch start minute and clamp into allowed window
-    const estimatedLunchStart = startTimeMinutes + estimatedLunchIndex * classDur;
-    const lunchStart = Math.min(Math.max(estimatedLunchStart, lunchMinStart), lunchMaxStart);
-    const lunchEnd = lunchStart + lunchDuration;
-
+    const slots = [];
     let current = startTimeMinutes;
-    let placedLunch = false;
-
     for (let i = 0; i < hours; i++) {
-      const isExplicitBreak = explicitBreaks ? explicitBreaks.includes(i) : false;
-      const isMorningBreak = !explicitBreaks && i === morningBreakIndexDefault;
-      const isAfternoonBreak = !explicitBreaks && i === afternoonBreakIndexDefault;
+      const isLunch = i === lunchIndex;
+      const isBreak = isLunch ? false : (explicitBreaks ? explicitBreaks.includes(i) : (i === morningBreakIndexDefault || i === afternoonBreakIndexDefault));
 
-      // If lunch not yet placed and this slot would overlap lunch window OR we're at the estimated lunch index, place lunch
-      const wouldOverlapLunch = (current < lunchStart && (current + classDur) >= lunchStart) || (i === estimatedLunchIndex && !placedLunch);
-      if (!placedLunch && wouldOverlapLunch) {
-        const start = lunchStart;
-        const end = lunchEnd;
-        slots.push(`${format24(start)} - ${format24(end)} (LUNCH)`);
-        current = end;
-        placedLunch = true;
+      if (isLunch) {
+        const start = current;
+        const end = start + lunchDuration;
+        // If outside window due to extreme inputs, clamp start inside window without creating gaps
+        const clampedStart = Math.min(Math.max(start, lunchMinStart), lunchMaxStart);
+        const shift = clampedStart - start;
+        const lunchStart = start + shift;
+        const lunchEnd = lunchStart + lunchDuration;
+        slots.push(`${format24(lunchStart)} - ${format24(lunchEnd)} (LUNCH)`);
+        current = lunchEnd;
         continue;
       }
 
-      if (isExplicitBreak || isMorningBreak || isAfternoonBreak) {
+      if (isBreak) {
         slots.push('Break');
-        current += morningBreakDuration; // 20
+        current += breakDuration;
         continue;
       }
 
@@ -1688,10 +1697,12 @@ export default function App() {
       current = end;
     }
 
-    // Ensure lunch exists in result; if not, replace middle slot
-    if (!slots.some(s => /12:00/.test(s) || /\(LUNCH\)/.test(s))) {
+    // Ensure exactly one lunch exists
+    if (!slots.some(s => /\(LUNCH\)/.test(String(s || '')))) {
+      // Replace middle slot as a last resort
       const mid = Math.floor(slots.length / 2);
-      slots[mid] = `${format24(lunchStart)} - ${format24(lunchEnd)} (LUNCH)`;
+      const fallbackStart = Math.min(Math.max(startTimeMinutes + mid * classDur, lunchMinStart), lunchMaxStart);
+      slots[mid] = `${format24(fallbackStart)} - ${format24(fallbackStart + lunchDuration)} (LUNCH)`;
     }
 
     return slots;
