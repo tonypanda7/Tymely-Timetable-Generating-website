@@ -87,11 +87,13 @@ function addRatingsToMeta(byName, ratings) {
   return out;
 }
 
-function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices, minCreditsForProgram, subjMeta) {
+function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices, minCreditsForProgram, subjMeta, freePeriodNumber = 0) {
   const perDayBreaks = (breakSlots || []).length;
   const electivePerDay = (electivePeriodIndices || []).length;
   const usablePerDay = hours - perDayBreaks - electivePerDay;
-  const totalUsable = days * Math.max(0, usablePerDay);
+  // Reserve freePeriodNumber slots per week for free periods (minimum)
+  const totalPossible = days * Math.max(0, usablePerDay);
+  const totalUsable = Math.max(0, totalPossible - (Number(freePeriodNumber) || 0));
 
   const minReq = Number(minCreditsForProgram || 0);
   // Exclude elective groups from regular demand allocation; elective periods are handled separately
