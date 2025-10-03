@@ -53,9 +53,10 @@ const AdminUploadPage = ({
   const [dragActive, setDragActive] = useState({});
   const [uploadedNames, setUploadedNames] = useState({});
 
-  const onFileSelect = (uploadType, handler, e) => {
+  const onFileSelect = async (uploadType, handler, e) => {
+    let files = null;
     try {
-      const files = (e && e.target && e.target.files) ? e.target.files : (e && e.dataTransfer && e.dataTransfer.files) ? e.dataTransfer.files : null;
+      files = (e && e.target && e.target.files) ? e.target.files : (e && e.dataTransfer && e.dataTransfer.files) ? e.dataTransfer.files : null;
       if (files && files.length) {
         const names = Array.from(files).map(f => f.name).join(', ');
         setUploadedNames(prev => ({ ...prev, [uploadType]: names }));
@@ -65,8 +66,19 @@ const AdminUploadPage = ({
     }
 
     if (typeof handler === 'function') {
-      try { handler(e); } catch (err) { /* ignore handler errors here */ }
+      try {
+        // Await the handler to ensure upload completes before user proceeds
+        await handler(e);
+      } catch (err) {
+        // Ensure errors are surfaced via showMessage in handler; here just log
+        console.error('Upload handler error:', err);
+      }
     }
+
+    // Reset file input so selecting the same file again triggers change event
+    try {
+      if (e && e.target && 'value' in e.target) e.target.value = '';
+    } catch (err) {}
   };
 
   const handleDrag = (e, uploadType) => {
