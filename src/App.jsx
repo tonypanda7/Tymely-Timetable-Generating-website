@@ -894,15 +894,22 @@ export default function App() {
       return null;
     };
 
+    // Build canonical subjects per (program, semester) so all sections share identical subjects
     const updates = [];
     const updatedClasses = [];
-    for (const clsDoc of classesSnap.docs) {
-      const clsData = clsDoc.data() || {};
-      const classId = clsDoc.id;
-      const className = clsData.name || classId;
-      const program = String(clsData.program || '');
-      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
 
+    // Collect unique program+sem keys
+    const progSemKeys = Array.from(new Set(classesSnap.docs.map(d => {
+      const data = d.data() || {};
+      const program = String(data.program || '');
+      const sem = Number(data.semester ?? data.sem ?? 1);
+      return `${program}::${sem}`;
+    })));
+
+    const subjectsByProgSem = {};
+    for (const key of progSemKeys) {
+      const [program, semStr] = key.split('::');
+      const sem = Number(semStr || 1);
       const relevant = coursesList.filter(c => String(c.program || '') === program && Number(c.semester || 0) === sem);
       const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
       const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
@@ -950,6 +957,18 @@ export default function App() {
         subjects.push(group);
       }
 
+      subjectsByProgSem[key] = subjects;
+    }
+
+    // Apply canonical subjects to every class (ensures sections A/B have identical subjects)
+    for (const clsDoc of classesSnap.docs) {
+      const clsData = clsDoc.data() || {};
+      const classId = clsDoc.id;
+      const className = clsData.name || classId;
+      const program = String(clsData.program || '');
+      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
+      const key = `${program}::${sem}`;
+      const subjects = subjectsByProgSem[key] || (Array.isArray(clsData.subjects) ? clsData.subjects : []);
       updates.push(setDoc(doc(classesRef, classId), { subjects }, { merge: true }));
       updatedClasses.push({ ...clsData, id: classId, name: className, subjects });
     }
