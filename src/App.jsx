@@ -2,6 +2,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
+
+// Scheduling constants
+const LUNCH_WINDOW_START = 12 * 60; // 12:00 in minutes
+const LUNCH_WINDOW_END = 13 * 60 + 40; // 13:40 in minutes
+const LUNCH_DURATION = 60; // 60 minutes lunch
+const BREAK_DURATION = 20; // 20 minutes for morning/afternoon breaks
 import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
 } from "firebase/auth";
