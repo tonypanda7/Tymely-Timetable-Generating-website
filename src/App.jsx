@@ -155,7 +155,8 @@ export default function App() {
   const [breakSlots, setBreakSlots] = useState([]); // zero-based indices preferred
   const [classStartTime, setClassStartTime] = useState("09:00");
   const [classDuration, setClassDuration] = useState(60);
-  const [freePeriodPercentage, setFreePeriodPercentage] = useState(20);
+  // freePeriodNumber: minimum number of free periods per week per class (default 5)
+  const [freePeriodNumber, setFreePeriodNumber] = useState(5);
   const [dayStartTime, setDayStartTime] = useState("09:00");
   const [dayEndTime, setDayEndTime] = useState("17:00");
   const [timetableSettings, setTimetableSettings] = useState(null);
