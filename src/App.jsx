@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager
+  initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
+
+// Scheduling constants
+const LUNCH_WINDOW_START = 12 * 60; // 12:00 in minutes
+const LUNCH_WINDOW_END = 13 * 60 + 40; // 13:40 in minutes
+const LUNCH_DURATION = 60; // 60 minutes lunch
+const BREAK_DURATION = 20; // 20 minutes for morning/afternoon breaks
 import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
 } from "firebase/auth";
@@ -647,6 +653,24 @@ export default function App() {
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
 
+  // Helper: commit many set operations in Firestore batches (chunks of 450 to stay under limits)
+  const commitBatchedSets = async (ops, chunkSize = 450) => {
+    if (!Array.isArray(ops) || ops.length === 0) return;
+    for (let i = 0; i < ops.length; i += chunkSize) {
+      const slice = ops.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      slice.forEach(({ ref, data }) => {
+        try {
+          batch.set(ref, data, { merge: true });
+        } catch (err) {
+          // fallback: ignore; set may fail if invalid
+          console.error('Batch set error for ref', ref, err);
+        }
+      });
+      await batch.commit();
+    }
+  };
+
   const handleTeacherCSV = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) { showMessage("No file selected.", "error"); return; }
@@ -697,11 +721,11 @@ export default function App() {
       });
 
       const teachersPublicRef = collection(db, 'artifacts', appId, 'public', 'data', 'teachers');
-      const uploads = [];
+      const ops = [];
       uniqueById.forEach((teacher) => {
-        uploads.push(setDoc(doc(teachersPublicRef, teacher.id), teacher, { merge: true }));
+        ops.push({ ref: doc(teachersPublicRef, teacher.id), data: teacher });
       });
-      await Promise.all(uploads);
+      await commitBatchedSets(ops);
 
       // Refresh local state with full merged dataset
       const snap = await getDocs(teachersPublicRef);
@@ -860,38 +884,69 @@ export default function App() {
       return teachersList.map(t => t.id);
     };
 
+    // Track assigned course counts per teacher and enforce max 3 courses per teacher
+    const teacherAssignedCount = Object.fromEntries((teachersList || []).map(t => [t.id, 0]));
+    const chooseTeacherForCourse = (candidateIds = []) => {
+      if (!Array.isArray(candidateIds) || candidateIds.length === 0) return null;
+      // sort candidates by current assigned count ascending
+      const sorted = candidateIds.slice().sort((a, b) => (teacherAssignedCount[a] || 0) - (teacherAssignedCount[b] || 0));
+      for (const tid of sorted) {
+        if ((teacherAssignedCount[tid] || 0) < 3) {
+          teacherAssignedCount[tid] = (teacherAssignedCount[tid] || 0) + 1;
+          return tid;
+        }
+      }
+      // none available under limit
+      return null;
+    };
+
+    // Build canonical subjects per (program, semester) so all sections share identical subjects
     const updates = [];
     const updatedClasses = [];
-    for (const clsDoc of classesSnap.docs) {
-      const clsData = clsDoc.data() || {};
-      const classId = clsDoc.id;
-      const className = clsData.name || classId;
-      const program = String(clsData.program || '');
-      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
 
+    // Collect unique program+sem keys
+    const progSemKeys = Array.from(new Set(classesSnap.docs.map(d => {
+      const data = d.data() || {};
+      const program = String(data.program || '');
+      const sem = Number(data.semester ?? data.sem ?? 1);
+      return `${program}::${sem}`;
+    })));
+
+    const subjectsByProgSem = {};
+    for (const key of progSemKeys) {
+      const [program, semStr] = key.split('::');
+      const sem = Number(semStr || 1);
       const relevant = coursesList.filter(c => String(c.program || '') === program && Number(c.semester || 0) === sem);
       const electivesList = relevant.filter(c => /elective/i.test(String(c.category || '')));
       const normalList = relevant.filter(c => !/elective/i.test(String(c.category || '')));
 
-      const subjects = normalList.map(c => ({
-        name: c.name,
-        credits: Number(c.credits || 0),
-        teachers: pickTeachersForCourse(c.name),
-        courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
-        isLab: !!c.isLab,
-        delivery: c.isLab ? 'lab' : 'theory',
-        style: c.style || 'hard_theory',
-        sem: Number(c.semester || 1),
-      }));
+      const subjects = normalList.map(c => {
+        const candidates = pickTeachersForCourse(c.name);
+        const chosen = chooseTeacherForCourse(candidates);
+        return {
+          name: c.name,
+          credits: Number(c.credits || 0),
+          teachers: chosen ? [chosen] : [],
+          courseType: /skill/i.test(String(c.category || '')) ? 'skill_based' : 'major',
+          isLab: !!c.isLab,
+          delivery: c.isLab ? 'lab' : 'theory',
+          style: c.style || 'hard_theory',
+          sem: Number(c.semester || 1),
+        };
+      });
 
       if (electivesList.length > 0) {
-        const details = electivesList.map(e => ({
-          name: e.name,
-          isLab: !!e.isLab,
-          style: e.style || 'hard_theory',
-          teachers: pickTeachersForCourse(e.name),
-          credits: Number(e.credits || 0),
-        }));
+        const details = electivesList.map(e => {
+          const candidates = pickTeachersForCourse(e.name);
+          const chosen = chooseTeacherForCourse(candidates);
+          return {
+            name: e.name,
+            isLab: !!e.isLab,
+            style: e.style || 'hard_theory',
+            teachers: chosen ? [chosen] : [],
+            credits: Number(e.credits || 0),
+          };
+        });
 
         const group = {
           name: `${program} Electives (Sem ${sem})`,
@@ -908,6 +963,18 @@ export default function App() {
         subjects.push(group);
       }
 
+      subjectsByProgSem[key] = subjects;
+    }
+
+    // Apply canonical subjects to every class (ensures sections A/B have identical subjects)
+    for (const clsDoc of classesSnap.docs) {
+      const clsData = clsDoc.data() || {};
+      const classId = clsDoc.id;
+      const className = clsData.name || classId;
+      const program = String(clsData.program || '');
+      const sem = Number(clsData.semester ?? clsData.sem ?? 1);
+      const key = `${program}::${sem}`;
+      const subjects = subjectsByProgSem[key] || (Array.isArray(clsData.subjects) ? clsData.subjects : []);
       updates.push(setDoc(doc(classesRef, classId), { subjects }, { merge: true }));
       updatedClasses.push({ ...clsData, id: classId, name: className, subjects });
     }
@@ -1269,8 +1336,8 @@ export default function App() {
           const toMin = (s) => { const [h, mm] = s.split(':').map(Number); return h * 60 + mm; };
           const start = toMin(m[1]);
           const end = toMin(m[2]);
-          const earliest = 12 * 60; // 12:00
-          const latestEnd = 13 * 60 + 40; // 13:40
+          const earliest = LUNCH_WINDOW_START; // 12:00
+          const latestEnd = LUNCH_WINDOW_END; // 13:40
           if (start < earliest || end > latestEnd) {
             showMessage(`Computed lunch slot (${label}) must be between 12:00 and 13:40. Adjust class times or duration.`, 'error');
             return;
@@ -1565,13 +1632,13 @@ export default function App() {
     };
 
     const startTimeMinutes = parseTime(typeof dst === 'string' && dst ? dst : (typeof cst === 'string' && cst ? cst : '09:00'));
-    const lunchWindowStart = 12 * 60; // earliest lunch start 12:00
-    const lunchWindowEnd = 13 * 60 + 40; // latest lunch end 13:40
-    const lunchMinStart = lunchWindowStart; // 720
-    const lunchMaxStart = lunchWindowEnd - 60; // latest start so 60-min lunch fits (760 = 12:40)
-    const lunchDuration = 60; // one hour lunch
-    const morningBreakDuration = 20;
-    const afternoonBreakDuration = 20;
+    const lunchWindowStart = LUNCH_WINDOW_START;
+    const lunchWindowEnd = LUNCH_WINDOW_END;
+    const lunchMinStart = lunchWindowStart;
+    const lunchMaxStart = lunchWindowEnd - LUNCH_DURATION;
+    const lunchDuration = LUNCH_DURATION;
+    const morningBreakDuration = BREAK_DURATION;
+    const afternoonBreakDuration = BREAK_DURATION;
 
     const slots = [];
 
@@ -1910,7 +1977,17 @@ export default function App() {
     try {
       const fmt = (ts) => new Date(Number(ts || Date.now())).toLocaleString();
       return (Array.isArray(teacherNotifDocs) ? teacherNotifDocs : [])
-        .filter(n => (String(n.type || '').toLowerCase() === 'admin_message') || n.title || n.message)
+        // Show only admin messages or general messages — exclude cancellation approvals/offers which should appear under 'Received'
+        .filter(n => {
+          const t = String(n.type || '').toLowerCase();
+          if (t === 'admin_message') return true;
+          // have title/message but exclude specific workflow notifications
+          if (n.title || n.message) {
+            if (['cancellation_approved', 'substitution_offer', 'cancellation_for_students'].includes(t)) return false;
+            return true;
+          }
+          return false;
+        })
         .map((n) => ({
           id: `tmsg_${n.id}`,
           title: n.title || 'Message',
