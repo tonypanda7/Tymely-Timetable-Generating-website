@@ -112,11 +112,11 @@ function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices
       const desiredSessions = desiredPeriods / 3;
       const baseUnits = Math.floor(desiredSessions);
       const remainder = desiredSessions - baseUnits;
-      return { name: s.name, teachers, isLab: true, baseUnits, extraUnits: 0, remainder };
+      return { name: s.name, teachers, isLab: true, baseUnits, extraUnits: 0, remainder, credits };
     } else {
       const baseUnits = Math.floor(desiredPeriods);
       const remainder = desiredPeriods - baseUnits;
-      return { name: s.name, teachers, isLab: false, baseUnits, extraUnits: 0, remainder };
+      return { name: s.name, teachers, isLab: false, baseUnits, extraUnits: 0, remainder, credits };
     }
   });
 
