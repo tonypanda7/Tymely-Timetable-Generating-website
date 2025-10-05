@@ -151,7 +151,7 @@ export default function App() {
 
   // Admin timetable settings (UI controls) and persisted settings
   const [workingDays, setWorkingDays] = useState(5);
-  const [hoursPerDay, setHoursPerDay] = useState(5);
+  const [hoursPerDay, setHoursPerDay] = useState(8);
   const [breakSlots, setBreakSlots] = useState([]); // zero-based indices preferred
   const [classStartTime, setClassStartTime] = useState("09:00");
   const [classDuration, setClassDuration] = useState(60);
