@@ -344,8 +344,6 @@ const AdminStudentTimetablePage = ({
 
         .table-container {
           overflow-x: auto;
-          overflow-y: auto;
-          max-height: 64vh;
         }
 
         .timetable-table {
