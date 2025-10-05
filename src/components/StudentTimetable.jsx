@@ -157,10 +157,11 @@ const StudentTimetable = ({
 
   // Helpers to align cells with header when lunch is present in timeSlots
   const isLunchHeaderAt = (idx) => /\(LUNCH\)/i.test(String(renderTimeSlots[idx] || ''));
-  const lunchCountBefore = (idx) => {
-    let c = 0; for (let i = 0; i < idx; i++) { if (isLunchHeaderAt(i)) c++; } return c;
+  const toDataIndex = (headerIdx) => {
+    const normalized = Number(headerIdx);
+    if (!Number.isFinite(normalized) || normalized < 0) return 0;
+    return normalized;
   };
-  const toDataIndex = (headerIdx) => headerIdx - lunchCountBefore(headerIdx);
 
   // Build export matrix (header + rows)
   const buildExportMatrix = () => {
