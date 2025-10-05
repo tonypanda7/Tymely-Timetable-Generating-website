@@ -2571,6 +2571,27 @@ export default function App() {
           <main className="main-content">
             <AdminMessagePage onSendMessage={sendAdminMessage} isSending={isSendingMessage} classes={classes} />
           </main>
+          <style>{`
+            .admin-layout {
+              display: flex;
+              min-height: 100vh;
+              width: 100vw;
+              background: #fff;
+            }
+
+            .main-content {
+              flex: 1;
+              margin-left: 211px;
+              min-height: 100vh;
+              overflow-x: hidden;
+            }
+
+            @media (max-width: 1024px) {
+              .main-content {
+                margin-left: 0;
+              }
+            }
+          `}</style>
         </div>
       )}
 
