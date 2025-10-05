@@ -613,9 +613,9 @@ const StudentTimetable = ({
 
                           if (cellData.status === 'free') {
                             return (
-                              <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
-                                <div className="flex items-center justify-center h-10">
-                                  <span className="text-xs text-center" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
+                              <td key={dayIdx} className="p-2 text-center">
+                                <div className="flex items-center justify-center">
+                                  <span className="text-xs text-center break-words" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
                                     Free
                                   </span>
                                 </div>
