@@ -155,14 +155,27 @@ const StudentTimetable = ({
   const [collapsed, setCollapsed] = useState(false);
   const sidebarWidth = collapsed ? 72 : 220; // match Dashboard student sidebar widths
 
+  // Helpers to align cells with header when lunch is present in timeSlots
+  const isLunchHeaderAt = (idx) => /\(LUNCH\)/i.test(String(renderTimeSlots[idx] || ''));
+  const lunchCountBefore = (idx) => {
+    let c = 0; for (let i = 0; i < idx; i++) { if (isLunchHeaderAt(i)) c++; } return c;
+  };
+  const toDataIndex = (headerIdx) => headerIdx - lunchCountBefore(headerIdx);
+
   // Build export matrix (header + rows)
   const buildExportMatrix = () => {
     const header = ['Time', ...WEEKDAY_LABELS.slice(0, Math.min(workingDays, WEEKDAY_LABELS.length))];
     const rows = Array.from({ length: periodCount }, (_, periodIdx) => {
       const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
       const cols = [timeSlot];
+      const lunchHeader = isLunchHeaderAt(periodIdx);
       for (let dayIdx = 0; dayIdx < Math.min(workingDays, WEEKDAY_LABELS.length); dayIdx++) {
-        const cellData = getCellContent(dayIdx, periodIdx);
+        if (lunchHeader) {
+          cols.push('Lunch');
+          continue;
+        }
+        const effIdx = toDataIndex(periodIdx);
+        const cellData = getCellContent(dayIdx, effIdx);
         let val = 'Free';
         if (cellData.status === 'break') val = cellData.subjectName || 'Break';
         else if (cellData.status !== 'free') val = cellData.className ? `${cellData.subjectName} — ${cellData.className}` : `${cellData.subjectName}`;
