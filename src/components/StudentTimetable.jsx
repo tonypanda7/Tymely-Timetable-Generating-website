@@ -625,9 +625,9 @@ const StudentTimetable = ({
 
                           if (cellData.status === 'break') {
                             return (
-                              <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
-                                <div className="flex items-center justify-center h-10">
-                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                              <td key={dayIdx} className="p-2 text-center">
+                                <div className="flex items-center justify-center">
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold break-words" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                                     {cellData.subjectName}
                                   </span>
                                 </div>
