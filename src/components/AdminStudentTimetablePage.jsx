@@ -54,7 +54,14 @@ const AdminStudentTimetablePage = ({
     }, 0);
   };
 
-  // Get cell content for timetable
+  // Header lunch helpers to align cells with header
+  const isLunchHeaderAt = (idx) => /\(LUNCH\)/i.test(String(renderTimeSlots[idx] || ''));
+  const lunchCountBefore = (idx) => {
+    let c = 0; for (let i = 0; i < idx; i++) { if (isLunchHeaderAt(i)) c++; } return c;
+  };
+  const toDataIndex = (headerIdx) => headerIdx - lunchCountBefore(headerIdx);
+
+  // Get cell content for timetable (by data index)
   const getCellContent = (className, dayIdx, periodIdx) => {
     const timetable = generatedTimetables[className];
     if (!Array.isArray(timetable) || !timetable[dayIdx] || !timetable[dayIdx][periodIdx]) {
