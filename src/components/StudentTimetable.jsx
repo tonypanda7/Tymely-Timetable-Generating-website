@@ -155,14 +155,27 @@ const StudentTimetable = ({
   const [collapsed, setCollapsed] = useState(false);
   const sidebarWidth = collapsed ? 72 : 220; // match Dashboard student sidebar widths
 
+  // Helpers to align cells with header when lunch is present in timeSlots
+  const isLunchHeaderAt = (idx) => /\(LUNCH\)/i.test(String(renderTimeSlots[idx] || ''));
+  const lunchCountBefore = (idx) => {
+    let c = 0; for (let i = 0; i < idx; i++) { if (isLunchHeaderAt(i)) c++; } return c;
+  };
+  const toDataIndex = (headerIdx) => headerIdx - lunchCountBefore(headerIdx);
+
   // Build export matrix (header + rows)
   const buildExportMatrix = () => {
     const header = ['Time', ...WEEKDAY_LABELS.slice(0, Math.min(workingDays, WEEKDAY_LABELS.length))];
     const rows = Array.from({ length: periodCount }, (_, periodIdx) => {
       const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
       const cols = [timeSlot];
+      const lunchHeader = isLunchHeaderAt(periodIdx);
       for (let dayIdx = 0; dayIdx < Math.min(workingDays, WEEKDAY_LABELS.length); dayIdx++) {
-        const cellData = getCellContent(dayIdx, periodIdx);
+        if (lunchHeader) {
+          cols.push('Lunch');
+          continue;
+        }
+        const effIdx = toDataIndex(periodIdx);
+        const cellData = getCellContent(dayIdx, effIdx);
         let val = 'Free';
         if (cellData.status === 'break') val = cellData.subjectName || 'Break';
         else if (cellData.status !== 'free') val = cellData.className ? `${cellData.subjectName} — ${cellData.className}` : `${cellData.subjectName}`;
@@ -567,6 +580,7 @@ const StudentTimetable = ({
                 <tbody>
                   {Array.from({ length: periodCount }, (_, periodIdx) => {
                     const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
+                    const lunchHeader = isLunchHeaderAt(periodIdx);
                     return (
                       <tr key={periodIdx} className="border-b" style={{ borderColor: 'rgba(0, 0, 0, 0.10)' }}>
                         {/* Time Cell */}
@@ -574,21 +588,34 @@ const StudentTimetable = ({
                           fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif',
                           color: '#0A0A0A',
                           background: 'rgba(236, 236, 240, 0.30)',
-                          height: periodIdx === 0 ? '65px' : '57px',
-                          width: timeColWidth
+                          width: timeColWidth,
+                          whiteSpace: 'normal'
                         }}>
                           {timeSlot}
                         </td>
 
                         {/* Day Cells */}
                         {Array.from({ length: Math.min(workingDays, WEEKDAY_LABELS.length) }, (_, dayIdx) => {
-                          const cellData = getCellContent(dayIdx, periodIdx);
-
-                          if (cellData.status === 'free') {
+                          if (lunchHeader) {
                             return (
                               <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
                                 <div className="flex items-center justify-center h-10">
-                                  <span className="text-xs text-center" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#3B82F6', color: '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                    Lunch
+                                  </span>
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          const dataIdx = toDataIndex(periodIdx);
+                          const cellData = getCellContent(dayIdx, dataIdx);
+
+                          if (cellData.status === 'free') {
+                            return (
+                              <td key={dayIdx} className="p-2 text-center">
+                                <div className="flex items-center justify-center">
+                                  <span className="text-xs text-center break-words" style={{ fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', color: '#717182' }}>
                                     Free
                                   </span>
                                 </div>
@@ -598,9 +625,9 @@ const StudentTimetable = ({
 
                           if (cellData.status === 'break') {
                             return (
-                              <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
-                                <div className="flex items-center justify-center h-10">
-                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                              <td key={dayIdx} className="p-2 text-center">
+                                <div className="flex items-center justify-center">
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold break-words" style={{ backgroundColor: cellData.bgColor || '#3B82F6', color: cellData.textColor || '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                                     {cellData.subjectName}
                                   </span>
                                 </div>
@@ -609,18 +636,20 @@ const StudentTimetable = ({
                           }
 
                           return (
-                            <td key={dayIdx} className="p-2" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
+                            <td key={dayIdx} className="p-2" style={{}}>
                               <div
                                 className="rounded p-2 flex flex-col justify-center"
                                 style={{
                                   backgroundColor: cellData.bgColor,
-                                  height: periodIdx === 0 ? '48px' : '48px'
+                                  minHeight: '40px',
+                                  whiteSpace: 'normal',
+                                  overflowWrap: 'break-word'
                                 }}
                               >
-                                <div className="text-xs font-medium" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                <div className="text-xs font-medium break-words" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                   {cellData.subjectName}
                                 </div>
-                                <div className="text-xs opacity-75" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                <div className="text-xs opacity-75 break-words" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                   {cellData.className}
                                 </div>
                               </div>
