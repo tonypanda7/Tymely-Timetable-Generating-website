@@ -413,7 +413,7 @@ const Dashboard = ({
             </div>
             <div className="bg-neutral-800 p-4 md:p-6 rounded-2xl shadow-lg border border-neutral-700">
               <h2 className="text-xl font-bold mb-4">Your Timetable</h2>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '64vh' }}>
                 <table className="min-w-full divide-y divide-neutral-700 text-sm">
                   <thead className="bg-neutral-700">
                     <tr>
