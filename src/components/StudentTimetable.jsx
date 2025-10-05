@@ -580,6 +580,7 @@ const StudentTimetable = ({
                 <tbody>
                   {Array.from({ length: periodCount }, (_, periodIdx) => {
                     const timeSlot = renderTimeSlots[periodIdx] || `${9 + periodIdx}:00-${10 + periodIdx}:00`;
+                    const lunchHeader = isLunchHeaderAt(periodIdx);
                     return (
                       <tr key={periodIdx} className="border-b" style={{ borderColor: 'rgba(0, 0, 0, 0.10)' }}>
                         {/* Time Cell */}
@@ -595,7 +596,20 @@ const StudentTimetable = ({
 
                         {/* Day Cells */}
                         {Array.from({ length: Math.min(workingDays, WEEKDAY_LABELS.length) }, (_, dayIdx) => {
-                          const cellData = getCellContent(dayIdx, periodIdx);
+                          if (lunchHeader) {
+                            return (
+                              <td key={dayIdx} className="p-2 text-center" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
+                                <div className="flex items-center justify-center h-10">
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#3B82F6', color: '#FFFFFF', fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                    Lunch
+                                  </span>
+                                </div>
+                              </td>
+                            );
+                          }
+
+                          const dataIdx = toDataIndex(periodIdx);
+                          const cellData = getCellContent(dayIdx, dataIdx);
 
                           if (cellData.status === 'free') {
                             return (
