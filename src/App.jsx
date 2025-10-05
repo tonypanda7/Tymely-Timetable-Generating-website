@@ -3373,7 +3373,7 @@ export default function App() {
               generatedTimetables[cls.name] && (
                 <div key={cls.name} className="mb-8">
                   <h4 className="text-base font-bold mb-2">{cls.name} — Total Credits: {(Array.isArray(cls.subjects) ? cls.subjects.reduce((s,x)=>s + Number(x.credits || 0), 0) : 0)}</h4>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '64vh' }}>
                     <table className="min-w-full divide-y divide-neutral-700 text-sm">
                       <thead className="bg-neutral-700">
                         <tr>
@@ -3439,7 +3439,7 @@ export default function App() {
               return (
                 <div key={t.id} className="mb-8">
                   <h4 className="text-base font-bold mb-2">{t.name} ({t.id})</h4>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '64vh' }}>
                     <table className="min-w-full divide-y divide-neutral-700 text-sm">
                       <thead className="bg-neutral-700">
                         <tr>
