@@ -588,8 +588,8 @@ const StudentTimetable = ({
                           fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif',
                           color: '#0A0A0A',
                           background: 'rgba(236, 236, 240, 0.30)',
-                          height: periodIdx === 0 ? '65px' : '57px',
-                          width: timeColWidth
+                          width: timeColWidth,
+                          whiteSpace: 'normal'
                         }}>
                           {timeSlot}
                         </td>
