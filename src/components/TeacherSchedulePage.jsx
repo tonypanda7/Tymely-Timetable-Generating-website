@@ -543,7 +543,7 @@ const TeacherSchedulePage = ({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '64vh' }}>
+            <div className="overflow-x-auto">
               <table className="w-full table-fixed">
                 {/* Table Header */}
                 <thead>
