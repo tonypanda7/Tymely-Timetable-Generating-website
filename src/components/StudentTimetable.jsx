@@ -636,18 +636,20 @@ const StudentTimetable = ({
                           }
 
                           return (
-                            <td key={dayIdx} className="p-2" style={{ height: periodIdx === 0 ? '65px' : '57px' }}>
+                            <td key={dayIdx} className="p-2" style={{}}>
                               <div
                                 className="rounded p-2 flex flex-col justify-center"
                                 style={{
                                   backgroundColor: cellData.bgColor,
-                                  height: periodIdx === 0 ? '48px' : '48px'
+                                  minHeight: '40px',
+                                  whiteSpace: 'normal',
+                                  overflowWrap: 'break-word'
                                 }}
                               >
-                                <div className="text-xs font-medium" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                <div className="text-xs font-medium break-words" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                   {cellData.subjectName}
                                 </div>
-                                <div className="text-xs opacity-75" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
+                                <div className="text-xs opacity-75 break-words" style={{ color: cellData.textColor, fontFamily: 'Inter, -apple-system, Roboto, Helvetica, sans-serif' }}>
                                   {cellData.className}
                                 </div>
                               </div>
