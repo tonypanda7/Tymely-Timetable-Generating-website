@@ -312,7 +312,13 @@ const AdminUploadPage = ({
                 { value: 7, label: '7 Classes' },
                 { value: 8, label: '8 Classes' },
                 { value: 9, label: '9 Classes' },
-                { value: 10, label: '10 Classes' }
+                { value: 10, label: '10 Classes' },
+                { value: 11, label: '11 Classes' },
+                { value: 12, label: '12 Classes' },
+                { value: 13, label: '13 Classes' },
+                { value: 14, label: '14 Classes' },
+                { value: 15, label: '15 Classes' },
+                { value: 16, label: '16 Classes' }
               ]}
             />
             
