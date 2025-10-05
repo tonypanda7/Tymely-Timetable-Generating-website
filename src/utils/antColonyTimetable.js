@@ -112,11 +112,11 @@ function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices
       const desiredSessions = desiredPeriods / 3;
       const baseUnits = Math.floor(desiredSessions);
       const remainder = desiredSessions - baseUnits;
-      return { name: s.name, teachers, isLab: true, baseUnits, extraUnits: 0, remainder };
+      return { name: s.name, teachers, isLab: true, baseUnits, extraUnits: 0, remainder, credits };
     } else {
       const baseUnits = Math.floor(desiredPeriods);
       const remainder = desiredPeriods - baseUnits;
-      return { name: s.name, teachers, isLab: false, baseUnits, extraUnits: 0, remainder };
+      return { name: s.name, teachers, isLab: false, baseUnits, extraUnits: 0, remainder, credits };
     }
   });
 
@@ -139,6 +139,26 @@ function buildDemandForClass(cls, days, hours, breakSlots, electivePeriodIndices
       }
     }
     if (!found) break; // cannot fit any more units
+  }
+
+  // If slots remain unallocated (e.g., all remainders were zero), fill remaining slots by assigning to largest-credit subjects
+  if (available > 0) {
+    const byCredits = entries.slice().sort((a, b) => (b.credits || 0) - (a.credits || 0) || b.remainder - a.remainder);
+    let ci = 0; let safety = 0;
+    while (available > 0 && safety < 10000) {
+      const e = byCredits[ci % byCredits.length];
+      const cost = e.isLab ? 3 : 1;
+      if (available >= cost) {
+        e.extraUnits += 1;
+        available -= cost;
+      }
+      ci += 1; safety += 1;
+      // If none of subjects can fit due to cost > available, break to avoid infinite loop
+      if (ci % byCredits.length === 0) {
+        const minCost = byCredits.reduce((m, x) => Math.min(m, x.isLab ? 3 : 1), Infinity);
+        if (available < minCost) break;
+      }
+    }
   }
 
   // Build demand items: one item per theory period; one item per lab session (3 periods placed together)
@@ -293,7 +313,7 @@ export function acGenerateTimetables({
   options = {}
 }) {
   const days = clamp(Number(workingDays) || 5, 1, 7);
-  const hours = clamp(Number(hoursPerDay) || 5, 1, 12);
+  const hours = clamp(Number(hoursPerDay) || 5, 1, 16);
   const breaks = Array.isArray(breakSlots) ? breakSlots.slice() : [];
   const electives = Array.isArray(electivePeriodIndices) ? electivePeriodIndices.slice() : [];
 

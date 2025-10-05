@@ -307,7 +307,7 @@ function mutate(chromosome, classes, days, hours, breakSlots, mutationRate = 0.1
 
 export function geneticGenerateTimetables({ classes = [], teachers = [], workingDays = 5, hoursPerDay = 5, breakSlots = [], freePeriodPercentage = 20, options = {} }) {
   const days = clamp(Number(workingDays) || 5, 1, 7);
-  const hours = clamp(Number(hoursPerDay) || 5, 1, 12);
+  const hours = clamp(Number(hoursPerDay) || 5, 1, 16);
   const breaks = Array.isArray(breakSlots) ? breakSlots.slice() : [];
 
   const populationSize = clamp(options.populationSize || 40, 10, 200);

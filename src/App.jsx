@@ -151,7 +151,7 @@ export default function App() {
 
   // Admin timetable settings (UI controls) and persisted settings
   const [workingDays, setWorkingDays] = useState(5);
-  const [hoursPerDay, setHoursPerDay] = useState(5);
+  const [hoursPerDay, setHoursPerDay] = useState(8);
   const [breakSlots, setBreakSlots] = useState([]); // zero-based indices preferred
   const [classStartTime, setClassStartTime] = useState("09:00");
   const [classDuration, setClassDuration] = useState(60);
@@ -1459,7 +1459,7 @@ export default function App() {
       // ignore
     }
 
-    const { timetables: newTimetables, teacherHoursLeft } = acGenerateTimetables({
+    const { timetables: newTimetablesRaw, teacherHoursLeft } = acGenerateTimetables({
       classes: eligibleClasses,
       teachers,
       workingDays,
@@ -1471,6 +1471,154 @@ export default function App() {
       courseRatings,
       options: { ants: 40, iterations: 80, evaporation: 0.45, alpha: 1, beta: 3, minFreePeriodsPerWeek: Number(freePeriodPercentage || 0) }
     });
+
+    // Post-process generated timetables to ensure sections (A/B) have same subject counts per week
+    const newTimetables = (() => {
+      try {
+        const result = JSON.parse(JSON.stringify(newTimetablesRaw || {}));
+
+        // Build map from className to class metadata (program, semester)
+        const classMeta = {};
+        (eligibleClasses || []).forEach(c => {
+          if (!c || !c.name) return;
+          const prog = String(c.program || '');
+          const sem = Number(c.semester ?? c.sem ?? 1);
+          classMeta[c.name] = { program: prog, semester: sem, subjects: Array.isArray(c.subjects) ? c.subjects : [] };
+        });
+
+        // Group classes by program::semester
+        const groups = {};
+        Object.keys(classMeta).forEach((cn) => {
+          const m = classMeta[cn];
+          const key = `${m.program}::${m.semester}`;
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(cn);
+        });
+
+        // Determine lunch/break indices to avoid touching them
+        const headerSlots = Array.isArray(calculateTimeSlots()) ? calculateTimeSlots() : [];
+        const lunchIndices = headerSlots.map((s, i) => /\(LUNCH\)/i.test(String(s || '')) ? i : -1).filter(i => i >= 0);
+
+        const maxFreeSetting = (timetableSettings && Number(timetableSettings.maxFreePeriodsPerWeek)) || 10;
+
+        Object.keys(groups).forEach((gk) => {
+          const classNames = groups[gk];
+          if (!Array.isArray(classNames) || classNames.length < 2) return; // only care about multiple sections
+
+          // Use first class in group as canonical definition for subjects and credits
+          const canonicalClassName = classNames.find(n => Array.isArray(classMeta[n]?.subjects) && classMeta[n].subjects.length > 0) || classNames[0];
+          const canonicalSubjects = Array.isArray(classMeta[canonicalClassName]?.subjects) ? classMeta[canonicalClassName].subjects : [];
+
+          if (canonicalSubjects.length === 0) return;
+
+          // Compute class teaching slots per week (exclude breaks and elective slots)
+          const breaksCount = (Array.isArray(computedBreakSlots) ? computedBreakSlots.length : 0) + lunchIndices.length;
+          const classSlotsPerDay = Math.max(0, Number(hoursPerDay || 0) - breaksCount - (Array.isArray(electiveSlots) ? electiveSlots.length : 0));
+          const classTeachingSlotsPerWeek = Math.max(0, Number(workingDays || 0) * classSlotsPerDay);
+
+          // Distribute periods per subject based on credits (same logic as generator)
+          const totalCredits = canonicalSubjects.reduce((s, sub) => s + Number(sub.credits || 0), 0) || 1;
+          const desiredCounts = {};
+          canonicalSubjects.forEach((sub) => {
+            const cnt = Math.round((Number(sub.credits || 0) / totalCredits) * classTeachingSlotsPerWeek);
+            desiredCounts[sub.name] = Math.max(0, cnt);
+          });
+
+          // For each class in group, ensure counts match desiredCounts by filling free slots
+          classNames.forEach((clsName) => {
+            const table = result[clsName];
+            if (!Array.isArray(table)) return;
+
+            // Count current subject occurrences
+            const currentCounts = {};
+            let freeSlots = 0;
+            for (let d = 0; d < table.length; d++) {
+              const day = Array.isArray(table[d]) ? table[d] : [];
+              for (let p = 0; p < day.length; p++) {
+                if (lunchIndices.includes(p)) continue;
+                const slot = day[p];
+                if (!slot || slot.status === 'free' || String(slot.subjectName || '').toLowerCase() === 'free') { freeSlots++; continue; }
+                if (slot.status === 'break' || /break|lunch/i.test(String(slot.subjectName || ''))) continue;
+                const name = String(slot.subjectName || '');
+                currentCounts[name] = (currentCounts[name] || 0) + 1;
+              }
+            }
+
+            // Compute deficits per subject
+            const deficits = {};
+            Object.keys(desiredCounts).forEach((sname) => {
+              const want = Number(desiredCounts[sname] || 0);
+              const have = Number(currentCounts[sname] || 0);
+              if (have < want) deficits[sname] = want - have;
+            });
+
+            // Fill deficits from free slots
+            if (Object.keys(deficits).length > 0 && freeSlots > 0) {
+              for (let d = 0; d < table.length; d++) {
+                const day = table[d];
+                for (let p = 0; p < day.length; p++) {
+                  if (freeSlots <= 0) break;
+                  if (lunchIndices.includes(p)) continue;
+                  const slot = day[p];
+                  if (!slot || slot.status === 'free' || String(slot.subjectName || '').toLowerCase() === 'free') {
+                    // find a subject with remaining deficit
+                    const subToFill = Object.keys(deficits).find(k => deficits[k] > 0);
+                    if (!subToFill) break;
+                    // find teacher for subject from canonicalSubjects
+                    const subjDef = canonicalSubjects.find(s => s && s.name === subToFill) || {};
+                    const teacherId = (Array.isArray(subjDef.teachers) && subjDef.teachers[0]) ? subjDef.teachers[0] : '';
+                    day[p] = { subjectName: subToFill, className: clsName, status: 'confirmed', teacherId };
+                    deficits[subToFill] -= 1;
+                    freeSlots -= 1;
+                  }
+                }
+              }
+            }
+
+            // Enforce max free periods per week (unless timetableSettings specifies maxFreePeriodsPerWeek)
+            // Recount free slots after fills
+            let freeCountAfter = 0;
+            for (let d = 0; d < table.length; d++) {
+              const day = table[d];
+              for (let p = 0; p < day.length; p++) {
+                if (lunchIndices.includes(p)) continue;
+                const slot = day[p];
+                if (!slot || slot.status === 'free' || String(slot.subjectName || '').toLowerCase() === 'free') freeCountAfter++;
+              }
+            }
+
+            const maxAllowed = Number(maxFreeSetting || 10);
+            if (freeCountAfter > maxAllowed) {
+              let toFill = freeCountAfter - maxAllowed;
+              // fill with subjects proportionally from desiredCounts
+              const fillOrder = Object.keys(desiredCounts).sort((a,b) => (desiredCounts[b] - desiredCounts[a]));
+              for (let d = 0; d < table.length && toFill > 0; d++) {
+                const day = table[d];
+                for (let p = 0; p < day.length && toFill > 0; p++) {
+                  if (lunchIndices.includes(p)) continue;
+                  const slot = day[p];
+                  if (!slot || slot.status === 'free' || String(slot.subjectName || '').toLowerCase() === 'free') {
+                    const pick = fillOrder.find(k => k);
+                    const subjDef = canonicalSubjects.find(s => s && s.name === pick) || {};
+                    const teacherId = (Array.isArray(subjDef.teachers) && subjDef.teachers[0]) ? subjDef.teachers[0] : '';
+                    day[p] = { subjectName: pick, className: clsName, status: 'confirmed', teacherId };
+                    toFill -= 1;
+                  }
+                }
+              }
+            }
+
+            // assign back
+            result[clsName] = table;
+          });
+        });
+
+        return result;
+      } catch (e) {
+        console.warn('Failed to post-process timetables for section-sync/max-free enforcement', e);
+        return newTimetablesRaw || {};
+      }
+    })();
 
     try {
       const settingsRef = doc(db, "artifacts", appId, "public", "data", "timetables", "settings");
