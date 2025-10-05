@@ -108,7 +108,7 @@ export default function AdminMessagePage({ onSendMessage, isSending, classes = [
       </form>
 
       <style>{`
-        .admin-message-page { min-height: 100vh; background: #fff; padding: 2rem; margin-left: 211px; }
+        .admin-message-page { min-height: 100vh; background: #fff; padding: 2rem; }
         .page-header { margin-bottom: 2rem; }
         .page-title { font-family: 'Roboto Condensed', sans-serif; font-size: 50px; font-weight: 600; color: #000; margin: 0; }
         .message-form { max-width: 1100px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
