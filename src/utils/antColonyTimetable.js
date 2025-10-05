@@ -293,7 +293,7 @@ export function acGenerateTimetables({
   options = {}
 }) {
   const days = clamp(Number(workingDays) || 5, 1, 7);
-  const hours = clamp(Number(hoursPerDay) || 5, 1, 12);
+  const hours = clamp(Number(hoursPerDay) || 5, 1, 16);
   const breaks = Array.isArray(breakSlots) ? breakSlots.slice() : [];
   const electives = Array.isArray(electivePeriodIndices) ? electivePeriodIndices.slice() : [];
 
