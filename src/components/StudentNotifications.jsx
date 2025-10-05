@@ -28,11 +28,11 @@ const StudentNotifications = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-white flex">
+    <div className="w-full min-h-screen bg-white flex font-sans">
       {/* Sidebar */}
       <aside
-        className="fixed left-0 top-6 bottom-6 flex flex-col shadow-lg overflow-hidden"
-        style={{ background: '#E1F3FF', borderRadius: '0 50px 50px 0', width: `${sidebarWidth}px`, zIndex: 40 }}
+        className={`student-sidebar fixed left-0 top-6 bottom-6 flex flex-col shadow-lg overflow-hidden ${collapsed ? 'student-sidebar--collapsed' : ''}`}
+        style={{ width: `${sidebarWidth}px`, zIndex: 40 }}
       >
         {/* Hamburger Menu */}
         <button
@@ -101,7 +101,7 @@ const StudentNotifications = ({
         <div className={`${collapsed ? 'px-0 items-center' : 'px-8'} mt-auto mb-8 flex flex-col gap-4`}>
           <button className="hidden" aria-hidden="true">
             <svg width="24" height="19" viewBox="0 0 24 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20.3499 7.06399L19.9837 6.9027C19.9269 6.87766 19.8989 6.86509 19.8714 6.85206C19.5983 6.72256 19.3682 6.54363 19.2002 6.32956C19.1833 6.30802 19.1674 6.28543 19.1348 6.24078C19.1023 6.1962 19.0858 6.1736 19.0706 6.15124C18.92 5.92852 18.8385 5.68033 18.8336 5.42772C18.8331 5.40232 18.8332 5.37637 18.8343 5.32479L18.8415 4.98812C18.8529 4.44937 18.8587 4.17916 18.763 3.93666C18.6781 3.72126 18.536 3.52286 18.3462 3.35449C18.1317 3.16417 17.8347 3.0284 17.2402 2.75719L16.7464 2.53191C16.1536 2.26146 15.8571 2.12619 15.5423 2.07462C15.2639 2.02899 14.9765 2.03111 14.6991 2.08041C14.3859 2.13606 14.0931 2.27486 13.5079 2.5523L13.5045 2.55356L13.1507 2.72128C13.0948 2.7478 13.0665 2.76117 13.0384 2.77351C12.7601 2.896 12.4495 2.96373 12.1312 2.97181C12.0992 2.97263 12.0665 2.97263 12.0013 2.97263C11.9365 2.97263 11.9024 2.97263 11.8704 2.97181C11.5515 2.96369 11.2402 2.8956 10.9615 2.7726C10.9334 2.76021 10.9056 2.74673 10.8496 2.72009L10.4935 2.55085C9.90422 2.27079 9.60915 2.13054 9.29427 2.07462C9.0157 2.02514 8.72737 2.02377 8.44791 2.06998C8.13236 2.12215 7.83577 2.25843 7.24258 2.53098L7.23994 2.53191L6.75228 2.75598L6.74688 2.75859C6.15904 3.02869 5.86441 3.16407 5.6517 3.35361C5.46294 3.52181 5.32185 3.71989 5.2374 3.93472C5.14194 4.17755 5.14703 4.44834 5.15853 4.98963L5.16568 5.32582C5.16676 5.37673 5.16864 5.40203 5.16817 5.42707C5.16343 5.6802 5.08086 5.9289 4.92974 6.15201C4.9148 6.17407 4.8987 6.19614 4.86654 6.24021C4.83436 6.28432 4.81877 6.30625 4.80209 6.32753C4.63336 6.54275 4.40214 6.72272 4.12733 6.85245C4.10015 6.86528 4.0715 6.87762 4.01521 6.90231L3.65365 7.06094C3.05208 7.32486 2.75137 7.45693 2.53256 7.64488C2.33898 7.81116 2.19275 8.00838 2.10349 8.22318C2.00259 8.46598 2.00267 8.73824 2.00424 9.28273L2.00551 9.72774C2.00706 10.2686 2.00919 10.5388 2.11032 10.78C2.19979 10.9933 2.34495 11.1894 2.53744 11.3547C2.75502 11.5415 3.05274 11.6727 3.64974 11.9357L4.00808 12.0935C4.06907 12.1203 4.09976 12.1336 4.12917 12.1476C4.40148 12.2774 4.63089 12.4569 4.79818 12.6709C4.81625 12.694 4.8336 12.718 4.8683 12.766C4.90256 12.8134 4.92009 12.8371 4.93594 12.8608C5.08261 13.0807 5.16114 13.3249 5.16649 13.5735C5.16707 13.6004 5.16658 13.6275 5.16541 13.6821L5.15853 14.0047C5.14695 14.5479 5.1419 14.8198 5.23792 15.0633C5.32287 15.2787 5.46484 15.4771 5.65463 15.6454C5.86915 15.8358 6.16655 15.9714 6.76107 16.2427L7.25478 16.4679C7.84763 16.7384 8.14395 16.8735 8.45869 16.925C8.73714 16.9707 9.02464 16.9689 9.30209 16.9196C9.61567 16.8638 9.90948 16.7246 10.4964 16.4463L10.8502 16.2786C10.9062 16.2521 10.9346 16.2388 10.9626 16.2264C11.2409 16.1039 11.5512 16.0359 11.8695 16.0278C11.9015 16.027 11.9342 16.027 11.9994 16.027C12.0648 16.027 12.0974 16.027 12.1295 16.0278C12.4484 16.0359 12.7607 16.1042 13.0394 16.2272C13.0639 16.238 13.0885 16.2497 13.1316 16.2702L13.5078 16.449C14.0971 16.7291 14.3916 16.8689 14.7065 16.9249C14.985 16.9744 15.2736 16.9764 15.5531 16.9302C15.8685 16.878 16.1657 16.7414 16.7586 16.469L17.2536 16.2416C17.8418 15.9713 18.1367 15.8358 18.3495 15.6462C18.5383 15.478 18.6796 15.28 18.764 15.0652C18.8588 14.8241 18.8531 14.5554 18.8417 14.0219L18.8343 13.674C18.8332 13.6231 18.8331 13.5978 18.8336 13.5727C18.8383 13.3196 18.9195 13.0707 19.0706 12.8476C19.0856 12.8256 19.1018 12.8033 19.1338 12.7594C19.166 12.7153 19.1827 12.6933 19.1994 12.672C19.3681 12.4568 19.5995 12.2767 19.8744 12.147C19.9012 12.1343 19.9289 12.1222 19.9838 12.0981L19.9857 12.0974L20.3472 11.9388C20.9488 11.6748 21.2501 11.5426 21.4689 11.3547C21.6625 11.1884 21.8085 10.9914 21.8978 10.7766C21.9981 10.5353 21.9973 10.2646 21.9958 9.72647L21.9945 9.2719C21.9929 8.73106 21.9921 8.46086 21.891 8.2197C21.8015 8.00634 21.6555 7.81027 21.463 7.64501C21.2457 7.45838 20.9475 7.32708 20.3517 7.06466L20.3499 7.06399Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M20.3499 7.06399L19.9837 6.9027C19.9269 6.87766 19.8989 6.86509 19.8714 6.85206C19.5983 6.72256 19.3682 6.54363 19.2002 6.32956C19.1833 6.30802 19.1674 6.28543 19.1348 6.24078C19.1023 6.1962 19.0858 6.1736 19.0706 6.15124C18.92 5.92852 18.8385 5.68033 18.8336 5.42772C18.8331 5.40232 18.8332 5.37637 18.8343 5.32479L18.8415 4.98812C18.8529 4.44937 18.8587 4.17916 18.763 3.93666C18.6781 3.72126 18.536 3.52286 18.3462 3.35449C18.1317 3.16417 17.8347 3.0284 17.2402 2.75719L16.7464 2.53191C16.1536 2.26146 15.8571 2.12619 15.5423 2.07462C15.2639 2.02899 14.9765 2.03111 14.6991 2.08041C14.3859 2.13606 14.0931 2.27486 13.5079 2.5523L13.5045 2.55356L13.1507 2.72128C13.0948 2.7478 13.0665 2.76117 13.0384 2.77351C12.7601 2.896 12.4495 2.96373 12.1312 2.97181C12.0992 2.97263 12.0665 2.97263 12.0013 2.97263C11.9365 2.97263 11.9024 2.97263 11.8704 2.97181C11.5515 2.96369 11.2402 2.8956 10.9615 2.7726C10.9334 2.76021 10.9056 2.74673 10.8496 2.72009L10.4935 2.55085C9.90422 2.27079 9.60915 2.13054 9.29427 2.07462C9.0157 2.02514 8.72737 2.02377 8.44791 2.06998C8.13236 2.12215 7.83577 2.25843 7.24258 2.53098L7.23994 2.53191L6.75228 2.75598L6.74688 2.75859C6.15904 3.02869 5.86441 3.16407 5.6517 3.35361C5.46294 3.52181 5.32185 3.71989 5.2374 3.93472C5.14194 4.17755 5.14703 4.44834 5.15853 4.98963L5.16568 5.32582C5.16676 5.37673 5.16864 5.40203 5.16817 5.42707C5.16343 5.6802 5.08086 5.9289 4.92974 6.15201C4.9148 6.17407 4.8987 6.19614 4.86654 6.24021C4.83436 6.28432 4.81877 6....
               <path d="M8.00033 9.49997C8.00033 11.2489 9.79119 12.6666 12.0003 12.6666C14.2095 12.6666 16.0003 11.2489 16.0003 9.49997C16.0003 7.75107 14.2095 6.3333 12.0003 6.3333C9.79119 6.3333 8.00033 7.75107 8.00033 9.49997Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {!collapsed && <span>Settings</span>}
@@ -121,50 +121,40 @@ const StudentNotifications = ({
       </aside>
 
       {/* Main Content */}
-      <main className="relative bg-white overflow-auto" style={{ marginLeft: `${sidebarWidth}px`, minHeight: '100vh' }}>
+      <main className="student-main relative bg-white overflow-auto" style={{ marginLeft: `${sidebarWidth}px`, minHeight: '100vh' }}>
         <div className="p-6">
           {/* Header */}
-          <h1 className="text-4xl font-semibold text-black mb-12 capitalize" style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 600 }}>
-            notifications
-          </h1>
+          <h1 className="student-page-title text-black mb-12 capitalize">notifications</h1>
 
-          {/* Notifications List */}
-          <div className="space-y-4 max-w-2xl">
+          {/* Notifications Grid (desktop-friendly) */}
+          <div className="student-notifications-grid">
             {displayNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className="relative bg-black rounded-lg p-4 min-h-[102px] flex flex-col justify-center"
-                style={{ borderRadius: '10px' }}
+                className="student-notification-card relative flex flex-col justify-center"
               >
                 {/* Close button */}
                 <button
                   onClick={() => removeNotification(notification.id)}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-300 transition-colors"
-                  style={{ fontFamily: 'Ponnala, -apple-system, Roboto, Helvetica, sans-serif', fontSize: '20px' }}
+                  className="student-notification-close absolute top-4 right-4"
                 >
                   ×
                 </button>
 
                 {/* Notification content */}
                 <div className="pr-8">
-                  <h3
-                    className="text-white font-semibold text-base mb-1 leading-relaxed"
-                    style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 600 }}
-                  >
+                  <h3 className="student-notification-title mb-1 leading-relaxed">
                     {notification.title}
                   </h3>
                   {notification.message && (
-                    <p className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 400 }}>
+                    <p className="student-notification-message mb-2">
                       {notification.message}
                     </p>
                   )}
                   {notification.imageData && (
                     <div className="mt-1"><img src={notification.imageData} alt="Attachment" className="rounded-md border border-neutral-700 max-h-48" /></div>
                   )}
-                  <p
-                    className="text-white opacity-50 text-sm mt-2"
-                    style={{ fontFamily: 'Poppins, -apple-system, Roboto, Helvetica, sans-serif', fontWeight: 500 }}
-                  >
+                  <p className="student-notification-time mt-2">
                     {notification.timestamp}
                   </p>
                 </div>
@@ -180,6 +170,73 @@ const StudentNotifications = ({
             )}
           </div>
         </div>
+
+        <style>{`
+          .student-sidebar { background: #E1F3FF; border-radius: 0 50px 50px 0; }
+          .student-sidebar--collapsed nav { padding-left: 0; padding-right: 0; }
+
+          .student-main { min-height: 100vh; }
+
+          .student-page-title { font-family: Poppins, -apple-system, Roboto, Helvetica, sans-serif; font-weight: 600; font-size: 32px; }
+
+          .student-notifications-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .student-notification-card {
+            background: #000;
+            color: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            min-height: 102px;
+          }
+
+          .student-notification-close {
+            color: #9CA3AF; /* gray-400 */
+            font-family: Ponnala, -apple-system, Roboto, Helvetica, sans-serif;
+            font-size: 20px;
+            transition: color 150ms ease-in-out;
+          }
+          .student-notification-close:hover { color: #D1D5DB; /* gray-300 */ }
+
+          .student-notification-title {
+            color: #fff;
+            font-family: Poppins, -apple-system, Roboto, Helvetica, sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+          }
+          .student-notification-message {
+            color: #fff;
+            font-family: Poppins, -apple-system, Roboto, Helvetica, sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+          }
+          .student-notification-time {
+            color: rgba(255, 255, 255, 0.5);
+            font-family: Poppins, -apple-system, Roboto, Helvetica, sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+          }
+
+          /* Desktop-friendly layout */
+          @media (min-width: 1024px) {
+            .student-page-title { font-size: 40px; }
+            .student-notifications-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+          }
+
+          /* Very wide screens */
+          @media (min-width: 1440px) {
+            .student-notifications-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          }
+
+          /* Small screens adjustments (preserve mobile look) */
+          @media (max-width: 640px) {
+            .student-page-title { font-size: 28px; }
+            .student-notification-card { padding: 12px; }
+          }
+        `}</style>
       </main>
     </div>
   );
