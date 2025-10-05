@@ -562,7 +562,7 @@ const StudentTimetable = ({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '64vh' }}>
+            <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse">
                 <thead>
                   <tr className="border-b" style={{ borderColor: 'rgba(0, 0, 0, 0.10)' }}>
