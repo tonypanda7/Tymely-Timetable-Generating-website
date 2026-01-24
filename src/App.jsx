@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { firebaseApp, db, auth, APP_ID } from "./utils/firebase";
 import {
   initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
-const appId = APP_ID;
 
 // Scheduling constants
 const LUNCH_WINDOW_START = 12 * 60; // 12:00 in minutes
@@ -13,7 +11,7 @@ const BREAK_DURATION = 20; // 20 minutes for morning/afternoon breaks
 import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken,
 } from "firebase/auth";
-
+import { initializeApp } from "firebase/app";
 import SignInPage from './components/SignInPage.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import AdminUploadPage from './components/AdminUploadPage.jsx';
@@ -62,6 +60,30 @@ import { saveAs } from 'file-saver';
  * @property {string} status // 'confirmed', 'declined', 'sub_request', 'free', 'break'
  * @property {string} teacherId // The original teacher for the slot
  */
+
+const firebaseConfigStr = typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null;
+let parsedConfig = null;
+try {
+  parsedConfig = firebaseConfigStr ? JSON.parse(firebaseConfigStr) : null;
+} catch (e) {
+  console.error('Invalid firebase config JSON:', e);
+  parsedConfig = null;
+}
+const app = parsedConfig ? initializeApp(parsedConfig) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? (typeof window !== 'undefined'
+  ? (window.__firestore_instance || (window.__firestore_instance = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false
+    })))
+  : initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false
+    })
+) : null;
+const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
 // Helper to safely parse timetable data that may be stored as a JSON string or as an object/array already.
 function parseTimetableData(raw) {
