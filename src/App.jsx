@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { firebaseApp } from "./utils/firebase";
 import { auth, db } from "./utils/firebase";
+import { db, auth, APP_ID } from "./utils/firebase";
 import {
   initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
+const appId = APP_ID;
 
 // Scheduling constants
 const LUNCH_WINDOW_START = 12 * 60; // 12:00 in minutes

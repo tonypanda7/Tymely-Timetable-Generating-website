@@ -26,3 +26,5 @@ export const db = initializeFirestore(firebaseApp, {
   experimentalAutoDetectLongPolling: true,
   useFetchStreams: false,
 });
+
+export const APP_ID = import.meta.env.VITE_FIREBASE_APP_ID;
