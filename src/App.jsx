@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { firebaseApp } from "./utils/firebase";
-import { auth, db } from "./utils/firebase";
-import { db, auth, APP_ID } from "./utils/firebase";
+import { firebaseApp, db, auth, APP_ID } from "./utils/firebase";
 import {
   initializeFirestore, collection, doc, setDoc, onSnapshot, getDoc, deleteDoc, getDocs, persistentLocalCache, persistentMultipleTabManager, writeBatch
 } from "firebase/firestore";
