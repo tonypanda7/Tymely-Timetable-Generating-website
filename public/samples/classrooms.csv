@@ -1,4 +1,9 @@
 ClassroomID,Location,Capacity
-R-101,Block A,60
-R-202,Block B,45
-LAB-1,Lab Wing,30
+R-101,Block A - Room 101,60
+R-102,Block A - Room 102,60
+R-103,Block B - Room 201,50
+R-104,Block B - Room 202,50
+LAB-101,Computer Lab 1,30
+LAB-102,Computer Lab 2,30
+LAB-103,Database Lab,25
+SEM-01,Seminar Room 1,25

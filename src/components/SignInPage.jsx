@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
-export default function SignInPage({ onLogin }) {
+export default function SignInPage({ onLogin, onSignUpClick }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSignIn = () => {
     const id = (email || '').trim();
     if (!id) return;
-    onLogin(id, null);
+    onLogin(id, null, password);
   };
 
   const handleBackClick = () => {
@@ -96,7 +96,9 @@ export default function SignInPage({ onLogin }) {
 
           {/* Links row */}
           <div className="flex justify-between items-center text-xs">
-            <button className="text-white/70 hover:text-white transition-colors font-normal">
+            <button 
+              onClick={onSignUpClick}
+              className="text-white/70 hover:text-white transition-colors font-normal">
               Sign Up
             </button>
             <button className="text-white/70 hover:text-white transition-colors font-normal text-right">

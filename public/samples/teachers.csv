@@ -1,4 +1,11 @@
 TeacherID,Name,WorkingHours,FirstPreference,SecondPreference
-T-001,Alice Smith,20,Mathematics,Physics
-T-002,Rahul Mehta,18,Computer Networks,Data Structures
-T-003,Sara Khan,16,Chemistry,Biology
+T-101,Dr. Alice Kumar,20,Data Structures,Web Development
+T-102,Prof. Bob Singh,20,Programming Fundamentals,Mathematics
+T-103,Dr. Carol White,18,Database Design,Database Systems
+T-104,Prof. David Brown,16,Web Technologies,Web Development
+T-105,Dr. Emma Wilson,20,Networking Basics,Computer Networks
+T-106,Prof. Frank Johnson,18,Systems Administration,Operating Systems
+T-107,Dr. Grace Lee,16,Mobile Development,Web Services
+T-108,Prof. Henry Davis,20,Algorithms,Software Engineering
+T-109,Dr. Iris Khan,18,Digital Logic,Computer Architecture
+T-110,Prof. James Miller,16,Cloud Computing,Enterprise Applications

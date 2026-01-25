@@ -1,4 +1,19 @@
 StudentID,Name,Program,Semester,Section,MinorCourses,SkillBasedCourses,AbilityEnhancementCourses,ValueAddedCourses
-S-1001,Bob Lee,BSc Computer Science,3,B,MATH201,Python Basics,Communication Skills,Entrepreneurship
-S-1002,Neha Gupta,BSc Computer Science,3,B,,Spreadsheets,,
-S-1003,John Doe,BCom Accounting,2,A,STAT101,Excel for Finance,English Proficiency,Financial Literacy
+S-1001,Alice Johnson,Computer Science,1,A,,,Communication Skills,
+S-1002,Bob Smith,Computer Science,1,A,,,Technical Writing,
+S-1003,Charlie Brown,Computer Science,1,A,,,Leadership,
+S-1004,Diana Prince,Computer Science,1,A,,,Problem Solving,
+S-1005,Evan Turner,Computer Science,1,A,,,Time Management,
+S-1006,Fiona Green,Computer Science,1,B,,,Communication Skills,
+S-1007,George Harris,Computer Science,1,B,,,Technical Writing,
+S-1008,Hannah White,Computer Science,1,B,,,Leadership,
+S-1009,Isaac Lee,Information Technology,1,A,,,Communication Skills,
+S-1010,Julia Martinez,Information Technology,1,A,,,Technical Writing,
+S-1011,Kevin Chen,Information Technology,1,B,,,Leadership,
+S-1012,Lena Davis,Information Technology,1,B,,,Problem Solving,
+S-2001,Michael Wilson,Computer Science,2,A,,,Leadership,
+S-2002,Nancy Anderson,Computer Science,2,A,,,Problem Solving,
+S-2003,Oscar Taylor,Computer Science,2,B,,,Communication Skills,
+S-2004,Patricia Moore,Computer Science,2,B,,,Technical Writing,
+S-2005,Quinn Roberts,Information Technology,2,A,,,Leadership,
+S-2006,Rachel Green,Information Technology,2,A,,,Time Management,
