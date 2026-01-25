@@ -1,4 +1,21 @@
 Program,Semester,CourseName,CourseCode,Credits,Category,IsLab,Style,NumSemesters,MinTotalCredits
-BSc Computer Science,2,Data Structures,CS201,4,Major,No,hard_theory,8,120
-BSc Computer Science,2,Computer Networks,CS205,3,Major,No,hard_theory,8,120
-BCom Accounting,2,Statistics for Business,BC102,3,Minor,No,hard_theory,6,100
+Computer Science,1,Data Structures,CS101,4,Major,No,hard_theory,4,60
+Computer Science,1,Web Development,CS102,4,Major,Yes,hard_theory,4,60
+Computer Science,1,Mathematics,CS103,3,Major,No,hard_theory,4,60
+Computer Science,1,Digital Logic,CS104,3,Major,No,hard_theory,4,60
+Computer Science,1,Programming Fundamentals,CS105,4,Major,Yes,hard_theory,4,60
+Information Technology,1,Database Design,IT101,4,Major,Yes,hard_theory,4,60
+Information Technology,1,Networking Basics,IT102,4,Major,No,hard_theory,4,60
+Information Technology,1,Systems Administration,IT103,3,Major,No,hard_theory,4,60
+Information Technology,1,Web Technologies,IT104,4,Major,Yes,hard_theory,4,60
+Information Technology,1,Mobile Development,IT105,3,Major,Yes,hard_theory,4,60
+Computer Science,2,Algorithms,CS201,4,Major,No,hard_theory,4,60
+Computer Science,2,Database Systems,CS202,4,Major,Yes,hard_theory,4,60
+Computer Science,2,Operating Systems,CS203,3,Major,No,hard_theory,4,60
+Computer Science,2,Software Engineering,CS204,4,Major,No,hard_theory,4,60
+Computer Science,2,Computer Networks,CS205,3,Major,No,hard_theory,4,60
+Information Technology,2,Enterprise Applications,IT201,4,Major,Yes,hard_theory,4,60
+Information Technology,2,Cloud Computing,IT202,4,Major,No,hard_theory,4,60
+Information Technology,2,Network Security,IT203,3,Major,No,hard_theory,4,60
+Information Technology,2,Advanced Databases,IT204,4,Major,Yes,hard_theory,4,60
+Information Technology,2,Web Services,IT205,3,Major,Yes,hard_theory,4,60

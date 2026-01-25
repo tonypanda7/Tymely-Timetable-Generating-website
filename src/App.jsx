@@ -1,3 +1,4 @@
+// A-200 hi
 import { useState, useEffect, useRef, useMemo } from "react";
 import { firebaseApp, db, auth, APP_ID } from "./utils/firebase";
 import {
@@ -15,6 +16,7 @@ import {
 } from "firebase/auth";
 
 import SignInPage from './components/SignInPage.jsx';
+import SignUpPage from './components/SignUpPage.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import AdminUploadPage from './components/AdminUploadPage.jsx';
 import AdminMessagePage from './components/AdminMessagePage.jsx';
@@ -124,6 +126,7 @@ function resolveElectiveSubjectForTeacher({ classesList, className, originalName
 export default function App() {
   const [collegeId, setCollegeId] = useState("");
   const [role, setRole] = useState(null);
+  const [showSignUp, setShowSignUp] = useState(false);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
 
@@ -152,6 +155,7 @@ export default function App() {
         const id = parts[1];
         setCollegeId(id);
         setRole('admin');
+        setCurrentView('admin-upload');
         autoLoginAppliedRef.current = true;
         console.info('Auto-login as admin:', id);
       }
@@ -227,6 +231,7 @@ export default function App() {
   const [adminTab, setAdminTab] = useState('status');
   const [showAdminCreateModal, setShowAdminCreateModal] = useState(false);
   const [pendingAdminId, setPendingAdminId] = useState('');
+  const [pendingAdminPassword, setPendingAdminPassword] = useState('');
   const [showSidebar, setShowSidebar] = useState(false);
   const [useSidebarLayout, setUseSidebarLayout] = useState(false);
 
@@ -234,6 +239,14 @@ export default function App() {
   const isGeneratingRef = useRef(false);
 
   // Load external library scripts and handle auth
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    console.log("AUTH STATE CHANGED:", user);
+  });
+
+  return () => unsubscribe();
+}, []);
+
   useEffect(() => {
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
@@ -543,7 +556,7 @@ export default function App() {
     }
   }, [generatedTimetables, collegeId, role, timetableSettings, workingDays, hoursPerDay, breakSlots]);
 
-  const handleLogin = async (inputId, inputRole) => {
+  const handleLogin = async (inputId, inputRole, inputPassword) => {
     const id = (inputId || collegeId || '').trim();
     if (!id) { showMessage("Enter your ID.", "error"); return; }
     if (!db) { showMessage("Database not ready. Please try again.", "error"); return; }
@@ -560,9 +573,25 @@ export default function App() {
       if (r === 'teacher') {
         const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', id));
         if (!snap.exists()) { showMessage('Teacher not found.', 'error'); return; }
+        // Verify password if provided
+        if (inputPassword) {
+          const teacherData = snap.data();
+          if (teacherData.password !== inputPassword) {
+            showMessage('Invalid password.', 'error');
+            return;
+          }
+        }
       } else if (r === 'student') {
         const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id));
         if (!snap.exists()) { showMessage('Student not found.', 'error'); return; }
+        // Verify password if provided
+        if (inputPassword) {
+          const studentData = snap.data();
+          if (studentData.password !== inputPassword) {
+            showMessage('Invalid password.', 'error');
+            return;
+          }
+        }
         // store the student's display name for dashboard header
         try { setStudentName((snap.data && snap.data().name) || snap?.data?.name || 'Student'); } catch (e) { setStudentName('Student'); }
       } else if (r === 'admin') {
@@ -570,8 +599,17 @@ export default function App() {
         const snap = await getDoc(adminDocRef);
         if (!snap.exists()) {
           setPendingAdminId(id);
+          setPendingAdminPassword(inputPassword || '');
           setShowAdminCreateModal(true);
           return;
+        }
+        // Verify password if provided
+        if (inputPassword) {
+          const adminData = snap.data();
+          if (adminData.password !== inputPassword) {
+            showMessage('Invalid password.', 'error');
+            return;
+          }
         }
       }
 
@@ -595,15 +633,117 @@ export default function App() {
     }
   };
 
+  const handleSignUp = async (userData) => {
+    if (!db) { throw new Error("Database not ready."); }
+
+    try {
+      const sanitizeId = (s) => String(s).replace(/\//g, '_').replace(/\s+/g, '-');
+      const sanitizedId = sanitizeId(userData.id);
+
+      const role = userData.role || 'student';
+
+      if (role === 'student') {
+        // Check if student already exists
+        const existingSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', sanitizedId));
+        if (existingSnap.exists()) {
+          throw new Error('Student ID already exists. Please use a different ID.');
+        }
+
+        // Create student document
+        const studentDoc = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          program: userData.program,
+          semester: userData.semester,
+          section: userData.section,
+          minorCourses: userData.minorCourses || [],
+          skillBasedCourses: userData.skillBasedCourses || [],
+          abilityEnhancementCourses: userData.abilityEnhancementCourses || [],
+          valueAddedCourses: userData.valueAddedCourses || [],
+          createdAt: new Date().toISOString(),
+        };
+
+        // Save to Firestore
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', sanitizedId), studentDoc, { merge: true });
+
+        // Auto-add student to their class (create if doesn't exist)
+        const classKey = `${userData.program || 'Program'}-SEM${userData.semester}-${userData.section}`;
+        const classId = sanitizeId(classKey);
+        
+        const classRef = doc(db, 'artifacts', appId, 'public', 'data', 'classes', classId);
+        const classSnap = await getDoc(classRef);
+        
+        if (classSnap.exists()) {
+          const classData = classSnap.data();
+          const students = Array.isArray(classData.students) ? classData.students : [];
+          if (!students.includes(userData.id)) {
+            students.push(userData.id);
+            await setDoc(classRef, { ...classData, students }, { merge: true });
+          }
+        } else {
+          // Create new class
+          await setDoc(classRef, {
+            id: classId,
+            name: classKey,
+            program: userData.program,
+            semester: userData.semester,
+            section: userData.section,
+            subjects: [],
+            students: [userData.id],
+          }, { merge: true });
+        }
+      } else if (role === 'teacher') {
+        // Check if teacher already exists
+        const existingSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', sanitizedId));
+        if (existingSnap.exists()) {
+          throw new Error('Teacher ID already exists. Please use a different ID.');
+        }
+
+        // Create teacher document
+        const teacherDoc = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          weeklyRequiredHours: userData.weeklyRequiredHours || 20,
+          hoursLeft: userData.hoursLeft || userData.weeklyRequiredHours || 20,
+          skipsUsed: userData.skipsUsed || 0,
+          expertise: userData.expertise || '',
+          preferences: userData.preferences || [],
+          createdAt: new Date().toISOString(),
+        };
+
+        // Save to Firestore
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'teachers', sanitizedId), teacherDoc, { merge: true });
+      }
+
+      showMessage(`${role === 'student' ? 'Student' : 'Teacher'} account created successfully! You can now sign in.`, 'success');
+      setShowSignUp(false);
+      
+      // Auto login after successful signup
+      setTimeout(() => {
+        handleLogin(userData.id, role);
+      }, 1000);
+    } catch (error) {
+      console.error('Error signing up:', error);
+      throw error;
+    }
+  };
+
   const createAdminNow = async () => {
     try {
       if (!db || !pendingAdminId) { setShowAdminCreateModal(false); return; }
       const adminDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', pendingAdminId);
-      await setDoc(adminDocRef, { id: pendingAdminId }, { merge: true });
+      await setDoc(adminDocRef, { id: pendingAdminId, password: pendingAdminPassword }, { merge: true });
       setShowAdminCreateModal(false);
+      setPendingAdminId('');
+      setPendingAdminPassword('');
       setCollegeId(pendingAdminId);
       setRole('admin');
-      setCurrentView('dashboard');
+      setCurrentView('admin-upload');
+      showMessage('Admin account created successfully!', 'success');
     } catch (e) {
       console.error(e);
       showMessage('Failed to create admin. Try again.', 'error');
@@ -613,6 +753,7 @@ export default function App() {
   const cancelCreateAdmin = () => {
     setShowAdminCreateModal(false);
     setPendingAdminId('');
+    setPendingAdminPassword('');
     showMessage('Admin access denied.', 'error');
   };
 
@@ -2561,7 +2702,14 @@ export default function App() {
         </div>
       )}
 
-      {!role && <SignInPage onLogin={handleLogin} />}
+      {!role && !showSignUp && <SignInPage onLogin={handleLogin} onSignUpClick={() => setShowSignUp(true)} />}
+
+      {!role && showSignUp && (
+        <SignUpPage 
+          onSignUp={handleSignUp} 
+          onBackToSignIn={() => setShowSignUp(false)} 
+        />
+      )}
 
       {role && currentView === 'admin-upload' && (
         <div className="admin-layout">

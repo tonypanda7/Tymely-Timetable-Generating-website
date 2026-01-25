@@ -1,3 +1,19 @@
 StudentID,TeacherID,TeacherRating,CourseCode,CourseName,CourseRating
-S-1001,T-001,4.5,CS201,Data Structures,4
-S-1002,T-002,4,CS205,Computer Networks,3.5
+S-1001,T-101,4.5,CS101,Data Structures,4.5
+S-1002,T-102,4.0,CS105,Programming Fundamentals,4.0
+S-1003,T-103,4.2,IT101,Database Design,4.2
+S-1004,T-104,3.8,IT104,Web Technologies,3.8
+S-1005,T-105,4.3,IT102,Networking Basics,4.3
+S-1006,T-101,4.6,CS101,Data Structures,4.6
+S-1007,T-102,4.1,CS103,Mathematics,4.1
+S-1008,T-104,4.4,CS102,Web Development,4.4
+S-1009,T-105,4.2,IT102,Networking Basics,4.2
+S-1010,T-103,4.0,IT101,Database Design,4.0
+S-1011,T-107,4.5,IT105,Mobile Development,4.5
+S-1012,T-106,3.9,IT103,Systems Administration,3.9
+S-2001,T-108,4.3,CS201,Algorithms,4.3
+S-2002,T-104,4.2,CS204,Software Engineering,4.2
+S-2003,T-105,4.3,CS205,Computer Networks,4.3
+S-2004,T-101,4.1,CS202,Database Systems,4.1
+S-2005,T-108,4.4,IT201,Enterprise Applications,4.4
+S-2006,T-109,4.2,IT202,Cloud Computing,4.2
