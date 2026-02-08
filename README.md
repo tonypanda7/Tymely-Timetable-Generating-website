@@ -4,7 +4,7 @@ It creates balanced schedules by:
 Distributing subjects evenly                                          
 Avoiding conflicts                                              
 Managing teacher workload                                                  
-Reducing student stress                                                            
+Reducing student stress                                                                       
 
 Timely helps schools and colleges save time and create efficient, NEP-compliant timetables in seconds.
 
